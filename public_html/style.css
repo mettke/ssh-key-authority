@@ -187,4 +187,9 @@ a {
 }
 a:focus, a:hover {
 	color: #611d42;
+
+@media (min-width: 768px) and (max-width: 991px) {
+	#wrap > .container {
+		padding: 120px 15px 0;
+	}
 }

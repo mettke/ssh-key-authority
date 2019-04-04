@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 ##
 ## Copyright 2013-2017 Opera Software AS
