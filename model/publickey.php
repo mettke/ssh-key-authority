@@ -33,14 +33,15 @@ class PublicKey extends Record {
 	* @throws InvalidArgumentException if the public key cannot be parsed or is not sufficiently secure
 	*/
 	public function import($key, $uid = null, $force = false) {
+		global $config;
 		// Remove newlines (often included by accident) and trim
 		$key = str_replace(array("\r", "\n"), array(), trim($key));
 
 		// Initial sanity check and determine minimum length for algorithm
 		if(preg_match('|^(ssh-[a-z]{3}) ([A-Za-z0-9+/]+={0,2})(?: (.*))?$|', $key, $matches)) {
-			$minbits = 4096;
+			$minbits = $config['general']['minimum_rsa_key_size'];
 		} elseif(preg_match('|^(ecdsa-sha2-nistp[0-9]+) ([A-Za-z0-9+/]+={0,2})(?: (.*))?$|', $key, $matches)) {
-			$minbits = 384;
+			$minbits = $config['general']['minimum_ecdsa_key_size'];
 		} elseif(preg_match('|^(ssh-ed25519) ([A-Za-z0-9+/]+={0,2})(?: (.*))?$|', $key, $matches)) {
 			$minbits = 256;
 		} else {

@@ -374,11 +374,6 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 				<label for="add_public_key">Public key</label>
 				<textarea class="form-control" rows="4" id="add_public_key" name="add_public_key" required></textarea>
 			</div>
-			<?php if($this->get('active_user')->admin) { ?>
-			<div class="checkbox">
-				<label><input type="checkbox" name="force"> Allow weak (< 4096 bits) key</label>
-			</div>
-			<?php } ?>
 			<div class="form-group"><button class="btn btn-primary btn-lg btn-block">Add public key to account</button></div>
 		</form>
 	</div>

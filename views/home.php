@@ -15,6 +15,7 @@
 ## limitations under the License.
 ##
 
+global $config;
 $public_keys = $active_user->list_public_keys();
 $admined_servers = $active_user->list_admined_servers(array('pending_requests', 'admins'));
 
@@ -28,7 +29,8 @@ if(isset($_POST['add_public_key'])) {
 		$content = new PageSection('key_upload_fail');
 		switch($e->getMessage()) {
 		case 'Insufficient bits in public key':
-			$content->set('message', "The public key you submitted is of insufficient strength; it must be at least 4096 bits.");
+			$minbits = $config['general']['minimum_rsa_key_size'];
+			$content->set('message', "The public key you submitted is of insufficient strength; it must be at least " . $minbits . " bits.");
 			break;
 		default:
 			$content->set('message', "The public key you submitted doesn't look valid.");
