@@ -42,11 +42,11 @@ if(isset($_POST['sync']) && ($server_admin || $active_user->admin)) {
 	redirect();
 } elseif(isset($_POST['add_admin']) && ($active_user->admin)) {
 	try {
-		$entity = $user_dir->get_user_by_uid($_POST['user_name']);
-	} catch(UserNotFoundException $e) {
+		$entity = $group_dir->get_group_by_name($_POST['user_name']);
+	} catch(GroupNotFoundException $e) {
 		try {
-			$entity = $group_dir->get_group_by_name($_POST['user_name']);
-		} catch(GroupNotFoundException $e) {
+			$entity = $user_dir->get_user_by_uid($_POST['user_name']);
+		} catch(UserNotFoundException $e) {
 			$content = new PageSection('user_not_found');
 		}
 	}
