@@ -24,8 +24,14 @@ set_exception_handler('exception_handler');
 $base_path = dirname(__FILE__);
 $base_url = dirname($_SERVER['SCRIPT_NAME']);
 $request_url = $_SERVER['REQUEST_URI'];
+$isSecure = false;
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+    $isSecure = true;
+} elseif (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' || !empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] == 'on') {
+    $isSecure = true;
+}
 $relative_request_url = preg_replace('/^'.preg_quote($base_url, '/').'/', '/', $request_url);
-$absolute_request_url = 'http'.(isset($_SERVER['HTTPS']) ? 's' : '').'://'.$_SERVER['HTTP_HOST'].$request_url;
+$absolute_request_url = 'http'.($isSecure ? 's' : '').'://'.$_SERVER['HTTP_HOST'].$request_url;
 
 if(isset($_SERVER['PHP_AUTH_USER'])) {
 	try {
