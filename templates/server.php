@@ -340,10 +340,20 @@
 					</div>
 					<input type="text" id="from_value" name="access_option[from][value]" value="<?php if(isset($options['from'])) out($options['from']->value); ?>" class="form-control">
 					<div class="checkbox">
+						<label><input type="checkbox" name="access_option[environment][enabled]"<?php if(isset($options['environment'])) out(' checked'); ?>> Define environment variables (<code>environment=&quot;KEY1=VAL KEY2=VAL&quot;</code>)</label>
+					</div>
+					<input type="text" id="environment_value" name="access_option[environment][value]" value="<?php if(isset($options['environment'])) out($options['environment']->value); ?>" class="form-control">
+					<div class="checkbox">
+						<label><input type="checkbox" name="access_option[no-agent-forwarding][enabled]"<?php if(isset($options['no-agent-forwarding'])) out(' checked'); ?>> Disallow agent forwarding (<code>no-agent-forwarding</code>)</label>
+					</div>
+					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-port-forwarding][enabled]"<?php if(isset($options['no-port-forwarding'])) out(' checked'); ?>> Disallow port forwarding (<code>no-port-forwarding</code>)</label>
 					</div>
 					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-X11-forwarding][enabled]"<?php if(isset($options['no-X11-forwarding'])) out(' checked'); ?>> Disallow X11 forwarding (<code>no-X11-forwarding</code>)</label>
+					</div>
+					<div class="checkbox">
+						<label><input type="checkbox" name="access_option[no-user-rc][enabled]"<?php if(isset($options['no-user-rc'])) out(' checked'); ?>> Disables execution of ~/.ssh/rc (<code>no-user-rc</code>)</label>
 					</div>
 					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-pty][enabled]"<?php if(isset($options['no-pty'])) out(' checked'); ?>> Disable terminal (<code>no-pty</code>)</label>
