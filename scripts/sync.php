@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+set_include_path(get_include_path() . PATH_SEPARATOR . 'scripts/phpseclib');
 ##
 ## Copyright 2013-2017 Opera Software AS
 ##
@@ -19,6 +20,10 @@
 chdir(__DIR__);
 require('../core.php');
 require('sync-common.php');
+include('Crypt/RSA.php');
+require('Net/SSH2.php');
+require('Net/SCP.php');
+
 $required_files = array('config/keys-sync', 'config/keys-sync.pub');
 foreach($required_files as $file) {
 	if(!file_exists($file)) die("Sync cannot start - $file not found.\n");
@@ -246,34 +251,35 @@ function sync_server($id, $only_username = null, $preview = false) {
 		return;
 	}
 
-	// This is working around deficiencies in the ssh2 library. In some cases, ssh connection attempts will fail, and
-	// the socket timeout of 60 seconds is somehow not triggered. Script execution timeout is also not triggered.
-	// Reproducing this problem is not easy - dropping packets to port 22 is not sufficient (it will timeout correctly).
-	// To workaround, we wrap calls to this script with 'timeout' shell command, and from this point on until we have
-	// established a connection, catch SIGTERM and report server sync failure if received
-	declare(ticks = 1);
-	pcntl_signal(SIGTERM, function($signal) use($server, $hostname, $keyfiles) {
-		echo date('c')." {$hostname}: SSH connection timed out.\n";
-		$server->sync_report('sync failure', 'SSH connection timed out');
-		$server->delete_all_sync_requests();
-		report_all_accounts_failed($keyfiles);
-		exit(1);
-	});
-
 	echo date('c')." {$hostname}: Attempting to connect.\n";
 	$legacy = false;
 	$attempts = array('keys-sync', 'root');
 	foreach($attempts as $attempt) {
 		try {
-			$connection = ssh2_connect($hostname, $server->port);
-		} catch(ErrorException $e) {
-			echo date('c')." {$hostname}: Failed to connect.\n";
+			$ssh = new Net_SSH2($hostname, $server->port);
+			$scp = new Net_SCP($ssh);
+			$ssh->enableQuietMode();
+			$ssh->_connect();
+		} catch(Exception $e) {
+			echo date('c')." {$hostname}: Failed to connect.\n".$e;
 			$server->sync_report('sync failure', 'SSH connection failed');
 			$server->delete_all_sync_requests();
 			report_all_accounts_failed($keyfiles);
 			return;
 		}
-		$fingerprint = ssh2_fingerprint($connection, SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX);
+
+		try {
+			$hostkey = substr($ssh->getServerPublicHostKey(), 8);
+			$hostkey = md5($hostkey);
+			$fingerprint = strtoupper($hostkey);
+		} catch(Exception $e) {
+			echo date('c')." {$hostname}: Unable to parse host key.\n";
+			$server->sync_report('sync failure', 'SSH host key not supported');
+			$server->delete_all_sync_requests();
+			report_all_accounts_failed($keyfiles);
+			return;
+		}
+		
 		if(is_null($server->rsa_key_fingerprint)) {
 			$server->rsa_key_fingerprint = $fingerprint;
 			$server->update();
@@ -297,32 +303,26 @@ function sync_server($id, $only_username = null, $preview = false) {
 			}
 		}
 		try {
-			ssh2_auth_pubkey_file($connection, $attempt, 'config/keys-sync.pub', 'config/keys-sync');
-			echo date('c')." {$hostname}: Logged in as $attempt.\n";
-			break;
-		} catch(ErrorException $e) {
-			$legacy = true;
-			if($attempt == 'root') {
-				echo date('c')." {$hostname}: Public key authentication failed.\n";
-				$server->sync_report('sync failure', 'SSH authentication failed');
-				$server->delete_all_sync_requests();
-				report_all_accounts_failed($keyfiles);
-				return;
+			$key = new Crypt_RSA();
+			$key->loadKey(file_get_contents('config/keys-sync'));
+			if ($ssh->login($attempt, $key)) {
+				echo date('c')." {$hostname}: Logged in as $attempt.\n";
+				break;
 			}
+		} catch(ErrorException $e) {}
+		$legacy = true;
+		if($attempt == 'root') {
+			echo date('c')." {$hostname}: Public key authentication failed.\n";
+			$server->sync_report('sync failure', 'SSH authentication failed');
+			$server->delete_all_sync_requests();
+			report_all_accounts_failed($keyfiles);
+			return;
 		}
 	}
-	try {
-		$sftp = ssh2_sftp($connection);
-	} catch(ErrorException $e) {
-		echo date('c')." {$hostname}: SFTP subsystem setup failed.\n";
-		$server->sync_report('sync failure', 'SFTP subsystem failed');
-		$server->delete_all_sync_requests();
-		report_all_accounts_failed($keyfiles);
-		return;
-	}
-	try {
-		$dir = ssh2_sftp_stat($sftp, $keydir);
-	} catch(ErrorException $e) {
+	$ssh->exec('/usr/bin/env test -d ' . $keydir);
+	if(!is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0) {
+		$dir = true;
+	} else {
 		echo date('c')." {$hostname}: Key directory does not exist.\n";
 		$dir = null;
 		$sync_warning = 'Key directory does not exist';
@@ -343,9 +343,9 @@ function sync_server($id, $only_username = null, $preview = false) {
 		$allowed_hostnames = null;
 		if($config['security']['hostname_verification'] >= 2) {
 			// 2+ = Compare with /var/local/keys-sync/.hostnames
-			try {
-				$allowed_hostnames = array_map('trim', file("ssh2.sftp://$sftp/var/local/keys-sync/.hostnames"));
-			} catch(ErrorException $e) {
+			$allowed_hostnames = explode("\n", trim($ssh->exec('/usr/bin/env cat /var/local/keys-sync/.hostnames')));
+			echo implode("|",$allowed_hostnames);
+			if(is_bool($ssh->getExitStatus()) || $ssh->getExitStatus() != 0) {
 				if($config['security']['hostname_verification'] >= 3) {
 					// 3+ = Abort if file does not exist
 					echo date('c')." {$hostname}: Hostnames file missing.\n";
@@ -359,10 +359,16 @@ function sync_server($id, $only_username = null, $preview = false) {
 			}
 		}
 		if(is_null($allowed_hostnames)) {
-			$stream = ssh2_exec($connection, '/bin/hostname -f');
-			stream_set_blocking($stream, true);
-			$allowed_hostnames = array(trim(stream_get_contents($stream)));
-			fclose($stream);
+			try {
+				$allowed_hostnames = array(trim($ssh->exec('/usr/bin/env hostname -f')));
+				echo implode("|",$allowed_hostnames);
+			} catch(ErrorException $e) {
+				echo date('c')." {$hostname}: Cannot execute hostname -f.\n";
+				$server->sync_report('sync failure', 'Cannot execute hostname -f');
+				$server->delete_all_sync_requests();
+				report_all_accounts_failed($keyfiles);
+				return;
+			}
 		}
 		if(!in_array($hostname, $allowed_hostnames)) {
 			echo date('c')." {$hostname}: Hostname check failed (allowed: ".implode(", ", $allowed_hostnames).").\n";
@@ -376,17 +382,27 @@ function sync_server($id, $only_username = null, $preview = false) {
 	if($legacy && isset($keyfiles['root'])) {
 		// Legacy sync (only if using root account)
 		$keyfile = $keyfiles['root'];
+		$success = false;
 		try {
 			$local_filename = tempnam('/tmp', 'syncfile');
 			$fh = fopen($local_filename, 'w');
 			fwrite($fh, $keyfile['keyfile']."# SKA system key\n".$ska_key);
 			fclose($fh);
-			ssh2_scp_send($connection, $local_filename, '/root/.ssh/authorized_keys2', 0600);
-			unlink($local_filename);
-			if(isset($keyfile['account'])) {
-				$keyfile['account']->sync_report('sync success');
+			$ssh->exec('/usr/bin/env mkdir -p '.escapeshellarg('/root/.ssh'));
+			if(!is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0) {
+				if ($scp->put('/root/.ssh/authorized_keys2', $local_filename, NET_SCP_LOCAL_FILE)) {
+					$ssh->exec('/usr/bin/env chmod 600 '.escapeshellarg('/root/.ssh/authorized_keys2'));
+					if(!is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0) {
+						unlink($local_filename);
+						if(isset($keyfile['account'])) {
+							$keyfile['account']->sync_report('sync success');
+						}
+						$success = true;
+					}
+				}
 			}
-		} catch(ErrorException $e) {
+		} catch(ErrorException $e) {}
+		if(!$success) {
 			echo date('c')." {$hostname}: Sync command execution failed for legacy root.\n";
 			$account_errors++;
 			if(isset($keyfile['account'])) {
@@ -397,44 +413,84 @@ function sync_server($id, $only_username = null, $preview = false) {
 
 	// New sync
 	if($dir) {
-		$stream = ssh2_exec($connection, '/usr/bin/sha1sum '.escapeshellarg($keydir).'/*');
-		stream_set_blocking($stream, true);
-		$entries = explode("\n", stream_get_contents($stream));
-		$sha1sums = array();
-		foreach($entries as $entry) {
-			if(preg_match('|^([0-9a-f]{40})  '.preg_quote($keydir, '|').'/(.*)$|', $entry, $matches)) {
-				$sha1sums[$matches[2]] = $matches[1];
+		try {		
+			$success = false;			
+			$entries = explode("\n", $ssh->exec('/usr/bin/env sha1sum '.escapeshellarg($keydir).'/*'));
+			if(!is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0) {
+				$sha1sums = array();
+				foreach($entries as $entry) {
+					if(preg_match('|^([0-9a-f]{40})  '.preg_quote($keydir, '|').'/(.*)$|', $entry, $matches)) {
+						$sha1sums[$matches[2]] = $matches[1];
+					}
+				}
+				$success = true;
 			}
+		} catch(ErrorException $e) {}
+		if(!$success) {
+			echo date('c')." {$hostname}: Cannot execute sha1sum.\n";
+			$server->sync_report('sync failure', 'Cannot execute sha1sum');
+			$server->delete_all_sync_requests();
+			report_all_accounts_failed($keyfiles);
+			return;
 		}
-		fclose($stream);
 		foreach($keyfiles as $username => $keyfile) {
 			if(is_null($only_username) || $username == $only_username) {
 				try {
 					$remote_filename = "$keydir/$username";
-					$remote_entity = "ssh2.sftp://" . intval($sftp) . $remote_filename;
 					$create = true;
+					$success = false;
 					if($keyfile['check']) {
-						$stream = ssh2_exec($connection, 'id '.escapeshellarg($username));
-						stream_set_blocking($stream, 1);
-						$output = stream_get_contents($stream);
-						fclose($stream);
+						$output = $ssh->exec('/usr/bin/env id '.escapeshellarg($username));
+						$success = !is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0;
+						if(!$success) {
+							echo "Unable to call id";
+						}
 						if(empty($output)) $create = false;
+					} else {
+						$success = true;
 					}
-					if($create) {
+					if($success && $create) {
 						if(isset($sha1sums[$username]) && $sha1sums[$username] == sha1($keyfile['keyfile'])) {
 							echo date('c')." {$hostname}: No changes required for {$username}\n";
 						} else {
-							file_put_contents($remote_entity, $keyfile['keyfile']);
-							ssh2_exec($connection, 'chown keys-sync: '.escapeshellarg($remote_filename));
-							echo date('c')." {$hostname}: Updated {$username}\n";
+							$local_filename = tempnam('/tmp', 'syncfile');
+							$fh = fopen($local_filename, 'w');
+							fwrite($fh, $keyfile['keyfile']);
+							fclose($fh);
+							$success = $scp->put($remote_filename, $local_filename, NET_SCP_LOCAL_FILE);
+							if(!$success) {
+								echo "Unable to transfer file using scp";
+							}
+							if($success) {
+								$ssh->exec('/usr/bin/env chmod 600 '.escapeshellarg($remote_filename));
+								$success = !is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0;
+								if(!$success) {
+									echo "Unable to change permission";
+								}
+							}
+							if($success) {
+								$ssh->exec('/usr/bin/env chown keys-sync: '.escapeshellarg($remote_filename));
+								$success = !is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0;
+								if(!$success) {
+									echo "Unable to change ownership";
+								}
+							}
+							if($success) {
+								unlink($local_filename);
+								echo date('c')." {$hostname}: Updated {$username}\n";
+							}
 						}
 						if(isset($sha1sums[$username])) {
 							unset($sha1sums[$username]);
 						}
-					} else {
-						ssh2_sftp_unlink($sftp, $remote_filename);
+					} else if($success) {
+						$ssh->exec('/usr/bin/env rm -f '.escapeshellarg($remote_filename));
+						$success = !is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0;
+						if(!$success) {
+							echo "Unable to remove file using rm";
+						}
 					}
-					if(isset($keyfile['account'])) {
+					if($success && isset($keyfile['account'])) {
 						if($sync_warning && $username != 'root') {
 							// File was synced, but will not work due to configuration on server
 							$keyfile['account']->sync_report('sync warning');
@@ -442,9 +498,10 @@ function sync_server($id, $only_username = null, $preview = false) {
 							$keyfile['account']->sync_report('sync success');
 						}
 					}
-				} catch(ErrorException $e) {
+				} catch(ErrorException $e) {}
+				if(!$success) {
 					$account_errors++;
-					echo "{$hostname}: Sync command execution failed for $username, ".$e->getMessage()."\n";
+					echo "{$hostname}: Sync command execution failed for $username.\n";
 					if(isset($keyfile['account'])) {
 						$keyfile['account']->sync_report('sync failure');
 					}
@@ -456,24 +513,26 @@ function sync_server($id, $only_username = null, $preview = false) {
 			foreach($sha1sums as $file => $sha1sum) {
 				if($file != '' && $file != 'keys-sync' && $file != '.hostnames') {
 					try {
-						if(ssh2_sftp_unlink($sftp, "$keydir/$file")) {
-							echo date('c')." {$hostname}: Removed unknown file: {$file}\n";
-						} else {
-							$cleanup_errors++;
-							echo date('c')." {$hostname}: Couldn't remove unknown file: {$file}\n";
-						}
-					} catch(ErrorException $e) {
+						$remote_filename = "$keydir/$file";
+						$success = false;
+						$ssh->exec('/usr/bin/env rm -f '.escapeshellarg($remote_filename));
+						$success = !is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0;
+					} catch(ErrorException $e) {}
+					if($success) {
+						echo date('c')." {$hostname}: Removed unknown file: {$file}\n";
+					} else {
 						$cleanup_errors++;
-						echo date('c')." {$hostname}: Couldn't remove unknown file: {$file}, ".$e->getMessage().".\n";
+						echo date('c')." {$hostname}: Couldn't remove unknown file: {$file}.\n";
 					}
 				}
 			}
 		}
 	}
 	try {
-		$uuid = trim(file_get_contents("ssh2.sftp://$sftp/etc/uuid"));
-		$server->uuid = $uuid;
-		$server->update();
+		$output = trim($ssh->exec('/usr/bin/env cat /etc/uuid'));
+		if(!is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0) {
+			$server->uuid = $output;
+		}
 	} catch(ErrorException $e) {
 		// If the /etc/uuid file does not exist, silently ignore
 	}
