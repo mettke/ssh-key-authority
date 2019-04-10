@@ -208,7 +208,13 @@
 							}
 							?>
 						</td>
-						<td class="<?php out($class)?>"><?php out($sync_details) ?></td>
+						<td class="<?php out($class)?>"><?php 
+						if($server->key_management == 'keys') {
+							out($sync_details);
+						} else {
+							out("Unmanaged");
+						}
+						?></td>
 					</tr>
 					<?php } ?>
 				</tbody>

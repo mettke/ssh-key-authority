@@ -157,7 +157,13 @@
 					</td>
 					<?php } ?>
 					<?php } ?>
-					<td class="<?php out($syncclass)?> nowrap"><?php if($server->key_management != 'none') out($sync_details) ?></td>
+					<td class="<?php out($syncclass)?> nowrap"><?php 
+					if($server->key_management == 'keys') {
+						out($sync_details);
+					} else {
+						out("Unmanaged");
+					}
+					?></td>
 				</tr>
 				<?php } ?>
 			</tbody>
@@ -191,6 +197,14 @@
 					<option value="<?php out($group->name)?>" label="<?php out($group->name)?>">
 					<?php } ?>
 				</datalist>
+			</div>
+			<div class="form-group">
+				<label for="server_managment">Key Managment</label>
+				<select name="key_management" class="browser-default custom-select form-control">
+					<option value="keys" selected>Managed by SSH Key Authority</option>
+					<option value="other">Managed by another system</option>
+					<option value="none">Unmanaged</option>
+				</select>
 			</div>
 			<button type="submit" name="add_server" value="1" class="btn btn-primary">Add server to key management</button>
 		</form>

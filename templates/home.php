@@ -161,7 +161,13 @@
 				out($admin_list, ESC_NONE);
 				?>
 			</td>
-			<td rowspan="2" class="<?php out($class)?>"><?php out($sync_details) ?></td>
+			<td rowspan="2" class="<?php out($class)?>"><?php 
+			if($server->key_management == 'keys') {
+				out($sync_details);
+			} else {
+				out("Unmanaged");
+			}
+			?></td>
 		</tr>
 		<tr>
 			<td colspan="2" class="indented">

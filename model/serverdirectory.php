@@ -27,9 +27,10 @@ class ServerDirectory extends DBDirectory {
 	public function add_server(Server $server) {
 		$hostname = $server->hostname;
 		$port = $server->port;
+		$key_management = $server->key_management;
 		try {
-			$stmt = $this->database->prepare("INSERT INTO server SET hostname = ?, port = ?");
-			$stmt->bind_param('sd', $hostname, $port);
+			$stmt = $this->database->prepare("INSERT INTO server SET hostname = ?, port = ?, key_management = ?");
+			$stmt->bind_param('sds', $hostname, $port, $key_management);
 			$stmt->execute();
 			$server->id = $stmt->insert_id;
 			$stmt->close();
