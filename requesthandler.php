@@ -30,6 +30,10 @@ if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
 } elseif (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' || !empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] == 'on') {
     $isSecure = true;
 }
+if(!isset($_SERVER['HTTP_HOST'])) {
+	require('views/error400.php');
+	die;
+}
 $relative_request_url = preg_replace('/^'.preg_quote($base_url, '/').'/', '/', $request_url);
 $absolute_request_url = 'http'.($isSecure ? 's' : '').'://'.$_SERVER['HTTP_HOST'].$request_url;
 
