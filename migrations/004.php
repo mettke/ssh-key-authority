@@ -1,7 +1,7 @@
 <?php
 $migration_name = 'Add local usermanagment';
 
-function free_results($database) {
+function free_results_004($database) {
     do {
         if ($res = $database->store_result()) {
             $res->free();
@@ -23,7 +23,7 @@ if ($result) {
                 SELECT LAST_INSERT_ID()
             ), uid = 'keys-sync', name = 'Synchronization script', email = '', auth_realm = 'local', admin = 1;
         "); 
-        free_results($this->database);
+        free_results_004($this->database);
     } else {
         $result->close();
         $this->database->query("
@@ -54,7 +54,7 @@ ALTER TABLE `entity_event`
     ADD CONSTRAINT `FK_entity_event_actor_id` FOREIGN KEY (`actor_id`) REFERENCES `entity` (`id`) ON DELETE SET NULL,
     ADD CONSTRAINT `FK_entity_event_entity_id` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`id`) ON DELETE CASCADE;
 ");
-free_results($this->database);
+free_results_004($this->database);
 
 
 $this->database->multi_query("
@@ -78,7 +78,7 @@ ALTER TABLE `group_event`
     ADD CONSTRAINT `FK_group_event_entity` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`id`) ON DELETE SET NULL,
     ADD CONSTRAINT `FK_group_event_group` FOREIGN KEY (`group`) REFERENCES `group` (`entity_id`) ON DELETE CASCADE;
 ");
-free_results($this->database);
+free_results_004($this->database);
 
 
 $this->database->multi_query("
@@ -104,7 +104,7 @@ ALTER TABLE `group_member`
     ADD CONSTRAINT `FK_group_member_entity_2` FOREIGN KEY (`added_by`) REFERENCES `entity` (`id`) ON DELETE SET NULL,
     ADD CONSTRAINT `FK_group_member_group` FOREIGN KEY (`group`) REFERENCES `group` (`entity_id`) ON DELETE CASCADE
 ");
-free_results($this->database);
+free_results_004($this->database);
 
 
 $this->database->multi_query("
@@ -128,7 +128,7 @@ ALTER TABLE `server_event`
     ADD CONSTRAINT `FK_server_event_actor_id` FOREIGN KEY (`actor_id`) REFERENCES `entity` (`id`) ON DELETE SET NULL,
     ADD CONSTRAINT `FK_server_log_server` FOREIGN KEY (`server_id`) REFERENCES `server` (`id`) ON DELETE CASCADE;
 ");
-free_results($this->database);
+free_results_004($this->database);
 
 
 $this->database->multi_query("
@@ -152,7 +152,7 @@ ALTER TABLE `server_note`
     ADD CONSTRAINT `FK_server_note_entity` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`id`) ON DELETE SET NULL,
     ADD CONSTRAINT `FK_server_note_server` FOREIGN KEY (`server_id`) REFERENCES `server` (`id`) ON DELETE CASCADE
 ");
-free_results($this->database);
+free_results_004($this->database);
 
 $this->database->commit();
 

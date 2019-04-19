@@ -94,6 +94,7 @@ class UserDirectory extends DBDirectory {
 	public function get_user_by_uid($uid) {
 		global $config, $group_dir, $active_user;
 		$ldap_enabled = $config['ldap']['enabled'];
+		$group_sync_enabled = $config['ldap']['full_group_sync'];
 		try {
 			$user = $this->_get_user_by_uid($uid);
 		} catch(UserNotFoundException $e) {
@@ -110,16 +111,18 @@ class UserDirectory extends DBDirectory {
 				}, $user->ldapgroups);
 				$this->add_user($user);
 
-				foreach($ldap_groups as $group) {
-					try {
-						$grp = $group_dir->get_group_by_name($group);
-					} catch(GroupNotFoundException $e) {
-						$grp = new Group;
-						$grp->name = $group;
-						$grp->system = 1;
-						$group_dir->add_group($grp);
+				if($group_sync_enabled == 1) {
+					foreach($ldap_groups as $group) {
+						try {
+							$grp = $group_dir->get_group_by_name($group);
+						} catch(GroupNotFoundException $e) {
+							$grp = new Group;
+							$grp->name = $group;
+							$grp->system = 1;
+							$group_dir->add_group($grp);
+						}
+						$grp->add_member($user);
 					}
-					$grp->add_member($user);
 				}
 			} else {
 				throw new UserNotFoundException('User does not exist.');
