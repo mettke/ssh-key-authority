@@ -2,7 +2,7 @@ version: '2.2'
 services:
   test:
     image: alpine:3.8
-    command: /bin/ash -c "(id keys-sync || adduser -h /var/local/keys-sync -S -D -s /bin/sh keys-sync) && chmod 711 /var/local/keys-sync && cp /key /var/local/keys-sync/keys-sync && chown keys-sync:nogroup /var/local/keys-sync/keys-sync && chmod 644 /var/local/keys-sync/keys-sync && apk add openssh && ssh-keygen -A && sed -i -e '/#StrictModes/ s/.*/StrictModes yes/' /etc/ssh/sshd_config && sed -i -e '/AuthorizedKeysFile/ s/.*/AuthorizedKeysFile \/var\/local\/keys-sync\/%u/' /etc/ssh/sshd_config && passwd keys-sync -d test && /usr/sbin/sshd -D"
+    command: /bin/ash -c "(id keys-sync || adduser -h /var/local/keys-sync -S -D -s /bin/sh keys-sync) && chmod 711 /var/local/keys-sync && cp /key /var/local/keys-sync/keys-sync && chown keys-sync:nogroup /var/local/keys-sync/keys-sync && chmod 644 /var/local/keys-sync/keys-sync && apk add openssh && ssh-keygen -A && sed -i -e '/#StrictModes/ s/.*/StrictModes no/' /etc/ssh/sshd_config && sed -i -e '/AuthorizedKeysFile/ s/.*/AuthorizedKeysFile \/var\/local\/keys-sync\/%u/' /etc/ssh/sshd_config && passwd keys-sync -d test && passwd root -d test && /usr/sbin/sshd -D"
     restart: always
     expose:
       - "22"

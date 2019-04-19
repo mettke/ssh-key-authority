@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine
 LABEL maintainer="Marc Mettke <marc@itmettke.de>"
 
 ENV SYSTEM https://github.com/mettke/ssh-key-authority.git
@@ -17,7 +17,6 @@ RUN mkdir -p /var/log/keys/ /run/php/ /ska/ && \
             php7-mysqli \
             php7-pcntl \
             php7-posix \
-            php7-ssh2 \
             rsync \
             ssmtp \
             sudo && \
