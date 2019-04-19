@@ -38,6 +38,7 @@ try {
 }
 
 $ldap_enabled = $config['ldap']['enabled'];
+$group_sync_enabled = $config['ldap']['full_group_sync'];
 
 if($ldap_enabled == 1) {
 	try {
@@ -56,55 +57,96 @@ foreach($servers as $server) {
 	}
 }
 foreach($users as $user) {
-	if($user->auth_realm == 'LDAP' && $ldap_enabled == 1) {
-		$active = $user->active;
-		try {
-			$user->get_details_from_ldap();
-			$user->update();
-			if(isset($config['ldap']['user_superior'])) {
-				$user->get_superior_from_ldap();
-			}
-		} catch(UserNotFoundException $e) {
-			$user->active = 0;
-		}
-		if($active && !$user->active) {
-			// Check for servers that will now be admin-less
-			$servers = $user->list_admined_servers();
-			foreach($servers as $server) {
-				$server_admins = $server->list_effective_admins();
-				$total_server_admins = 0;
-				foreach($server_admins as $server_admin) {
-					if($server_admin->active) $total_server_admins++;
+	if($user->auth_realm == 'LDAP') {
+		if($ldap_enabled == 1) {
+			$active = $user->active;
+			try {
+				$user->get_details_from_ldap();
+				$user->update();
+				if(isset($config['ldap']['user_superior'])) {
+					$user->get_superior_from_ldap();
 				}
-				if($total_server_admins == 0) {
-					if(isset($config['ldap']['user_superior'])) {
-						$rcpt = $user->superior;
-						while(!is_null($rcpt) && !$rcpt->active) {
-							$rcpt = $rcpt->superior;
+				if($group_sync_enabled == 1) {
+					$groups = $user->list_group_memberships();
+					$ldap_groups = $user->ldapgroups;
+
+					$groups = array_map(function($group) {
+						return $group->name;
+					}, $groups);
+					$ldap_groups = array_map(function($group) {
+						return $group["cn"];
+					}, $ldap_groups);
+
+					$add_to = array_diff($ldap_groups, $groups);
+					foreach($add_to as $group) {
+						try {
+							$grp = $group_dir->get_group_by_name($group);
+						} catch(GroupNotFoundException $e) {
+							$grp = new Group;
+							$grp->name = $group;
+							$grp->system = 1;
+							$group_dir->add_group($grp);
 						}
+						$grp->add_member($user);
 					}
-					$email = new Email;
-					$email->subject = "Server {$server->hostname} has been orphaned";
-					$email->body = "{$user->name} ({$user->uid}) was an administrator for {$server->hostname}, but they have now been marked as a former employee and there are no active administrators remaining for this server.\n\n";
-					$email->body .= "Please find a replacement owner for this server and inform {$config['email']['admin_address']} ASAP, otherwise the server will be registered for decommissioning.";
-					$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
-					if(is_null($rcpt)) {
-						$email->subject .= " - NO SUPERIOR EMPLOYEE FOUND";
-						$email->body .= "\n\nWARNING: No suitable superior employee could be found!";
-						$email->add_recipient($config['email']['report_address'], $config['email']['report_name']);
-					} else {
-						$email->add_recipient($rcpt->email, $rcpt->name);
-						$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+
+					$remove_from = array_diff($groups, $ldap_groups);
+					foreach($remove_from as $group) {
+						try {
+							$grp = $group_dir->get_group_by_name($group);
+						} catch(GroupNotFoundException $e) {
+							$grp = new Group;
+							$grp->name = $group;
+							$grp->system = 1;
+							$group_dir->add_group($grp);
+						}
+						$grp->delete_member($user);
 					}
-					$email->send();
+				}
+			} catch(UserNotFoundException $e) {
+				$user->active = 0;
+			}
+			if($active && !$user->active) {
+				// Check for servers that will now be admin-less
+				$servers = $user->list_admined_servers();
+				foreach($servers as $server) {
+					$server_admins = $server->list_effective_admins();
+					$total_server_admins = 0;
+					foreach($server_admins as $server_admin) {
+						if($server_admin->active) $total_server_admins++;
+					}
+					if($total_server_admins == 0) {
+						if(isset($config['ldap']['user_superior'])) {
+							$rcpt = $user->superior;
+							while(!is_null($rcpt) && !$rcpt->active) {
+								$rcpt = $rcpt->superior;
+							}
+						}
+						$email = new Email;
+						$email->subject = "Server {$server->hostname} has been orphaned";
+						$email->body = "{$user->name} ({$user->uid}) was an administrator for {$server->hostname}, but they have now been marked as a former employee and there are no active administrators remaining for this server.\n\n";
+						$email->body .= "Please find a replacement owner for this server and inform {$config['email']['admin_address']} ASAP, otherwise the server will be registered for decommissioning.";
+						$email->add_reply_to($config['email']['admin_address'], $config['email']['admin_name']);
+						if(is_null($rcpt)) {
+							$email->subject .= " - NO SUPERIOR EMPLOYEE FOUND";
+							$email->body .= "\n\nWARNING: No suitable superior employee could be found!";
+							$email->add_recipient($config['email']['report_address'], $config['email']['report_name']);
+						} else {
+							$email->add_recipient($rcpt->email, $rcpt->name);
+							$email->add_cc($config['email']['report_address'], $config['email']['report_name']);
+						}
+						$email->send();
+					}
 				}
 			}
-		}
-		if($user->admin && $user->active && !$user->member_of($sysgrp)) {
-			$sysgrp->add_member($user);
-		}
-		if(!($user->admin && $user->active) && $user->member_of($sysgrp)) {
-			$sysgrp->delete_member($user);
+			if($user->admin && $user->active && !$user->member_of($sysgrp)) {
+				$sysgrp->add_member($user);
+			}
+			if(!($user->admin && $user->active) && $user->member_of($sysgrp)) {
+				$sysgrp->delete_member($user);
+			}
+		} else {
+			$user->active = 0;
 		}
 	}
 	deprecate_public_keys($config, $user->list_public_keys(), $user->uid, $user->email, $user->name, $user);

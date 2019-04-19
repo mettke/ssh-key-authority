@@ -1,7 +1,7 @@
 <?php
 $migration_name = 'Add additional ssh key access options';
 
-function free_results($database) {
+function free_results_006($database) {
     do {
         if ($res = $database->store_result()) {
             $res->free();
@@ -29,7 +29,7 @@ RENAME TABLE access_option_2 TO access_option;
 ALTER TABLE `access_option`
 ADD CONSTRAINT `FK_access_option_access` FOREIGN KEY (`access_id`) REFERENCES `access` (`id`) ON DELETE CASCADE
 ");
-free_results($this->database);
+free_results_006($this->database);
 
 $this->database->multi_query("
 CREATE TABLE `server_ldap_access_option_2` (
@@ -49,7 +49,7 @@ RENAME TABLE server_ldap_access_option_2 TO server_ldap_access_option;
 ALTER TABLE `server_ldap_access_option`
 ADD CONSTRAINT `FK_server_ldap_access_option_server` FOREIGN KEY (`server_id`) REFERENCES `server` (`id`) ON DELETE CASCADE
 ");
-free_results($this->database);
+free_results_006($this->database);
 
 $this->database->commit();
 

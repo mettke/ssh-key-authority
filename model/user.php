@@ -343,8 +343,8 @@ class User extends Entity {
 			}
 			$this->admin = 0;
 			$group_member = $ldapuser[strtolower($config['ldap']['group_member_value'])];
-			$ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).'='.LDAP::escape($group_member), array('cn'));
-			foreach($ldapgroups as $ldapgroup) {
+			$this->ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).'='.LDAP::escape($group_member), array('cn'));
+			foreach($this->ldapgroups as $ldapgroup) {
 				if($ldapgroup['cn'] == $config['ldap']['admin_group_cn']) $this->admin = 1;
 			}
 		} else {

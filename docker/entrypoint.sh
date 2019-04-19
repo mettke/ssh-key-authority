@@ -25,9 +25,17 @@ elif [ $(id -u) = 0 ]; then
     exit 1
   fi
   rsync -a --delete /ska/public_html/ /public_html/
-  /usr/sbin/crond
   echo "Waiting for database..."
-  sleep 5
+  for i in $(seq 1 10); do 
+    if /ska/scripts/apply_migrations.php; then
+      echo "Success"
+      break
+    fi
+    echo "Trying again in 1 sec"
+    sleep 1
+  done
+  
+  /usr/sbin/crond
   /ska/scripts/syncd.php --user keys-sync
   /usr/sbin/php-fpm7 -F
 else

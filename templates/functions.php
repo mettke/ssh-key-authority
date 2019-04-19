@@ -19,6 +19,9 @@ function show_event($event) {
 	$json = json_decode($event->details);
 	$details = hesc($event->details);
 	switch($json->action) {
+	case 'User add':
+		$details = 'Added user';
+		break;
 	case 'Server add':
 		$details = 'Added server to key management';
 		break;

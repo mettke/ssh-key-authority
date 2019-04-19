@@ -60,7 +60,8 @@ class UserDirectory extends DBDirectory {
 			} else {
 				throw $e;
 			}
-		}		
+		}	
+		$user->log(array('action' => 'User add'));	
 	}
 
 	/**
@@ -91,8 +92,46 @@ class UserDirectory extends DBDirectory {
 	* @throws UserNotFoundException if no user with that uid exists
 	*/
 	public function get_user_by_uid($uid) {
-		global $config;
+		global $config, $group_dir, $active_user;
 		$ldap_enabled = $config['ldap']['enabled'];
+		$group_sync_enabled = $config['ldap']['full_group_sync'];
+		try {
+			$user = $this->_get_user_by_uid($uid);
+		} catch(UserNotFoundException $e) {
+			if ($ldap_enabled == 1) {
+				$active_user = $this->_get_user_by_uid('keys-sync');
+				$user = new User;
+				$user->uid = $uid;
+				$this->cache_uid[$uid] = $user;
+				$user->auth_realm = 'LDAP';
+
+				$user->get_details_from_ldap();
+				$ldap_groups = array_map(function($group) {
+					return $group["cn"];
+				}, $user->ldapgroups);
+				$this->add_user($user);
+
+				if($group_sync_enabled == 1) {
+					foreach($ldap_groups as $group) {
+						try {
+							$grp = $group_dir->get_group_by_name($group);
+						} catch(GroupNotFoundException $e) {
+							$grp = new Group;
+							$grp->name = $group;
+							$grp->system = 1;
+							$group_dir->add_group($grp);
+						}
+						$grp->add_member($user);
+					}
+				}
+			} else {
+				throw new UserNotFoundException('User does not exist.');
+			}
+		}
+		return $user;
+	}
+
+	private function _get_user_by_uid($uid) {
 		if(isset($this->cache_uid[$uid])) {
 			return $this->cache_uid[$uid];
 		}
@@ -104,16 +143,7 @@ class UserDirectory extends DBDirectory {
 			$user = new User($row['entity_id'], $row);
 			$this->cache_uid[$uid] = $user;
 		} else {
-			if ($ldap_enabled == 1) {
-				$user = new User;
-				$user->uid = $uid;
-				$this->cache_uid[$uid] = $user;
-				$user->auth_realm = 'LDAP';
-				$user->get_details_from_ldap();
-				$this->add_user($user);
-			} else {
-				throw new UserNotFoundException('User does not exist.');
-			}
+			throw new UserNotFoundException('User does not exist.');
 		}
 		$stmt->close();
 		return $user;
