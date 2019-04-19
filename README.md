@@ -1,7 +1,7 @@
+> This is a maintained fork of [operasoftware/ssh-key-authority](https://github.com/operasoftware/ssh-key-authority). There should be no problem upgrading to this version, but it is not possible to migrate back to the old. Before migrating remember to make backups!
+
 SKA - SSH Key Authority
 =======================
-
-*Please see the [Security Advisories](#security-advisories) section below for a recently addressed security issue*
 
 A tool for managing user and server SSH access to any number of servers.
 
@@ -18,6 +18,7 @@ Features
 * Specify SSH access options such as `command=`, `nopty` etc on your access rules.
 * All access changes are logged to the database and to the system logs. Granting of access is also reported by email.
 * Be notified when a server becomes orphaned (has no active administrators).
+* Introduce key depreciation to encouraging users to replace their public keys
 
 Demo
 ----
@@ -34,7 +35,6 @@ All data on this demonstration server is reset nightly at 00:00 UTC.
 Requirements
 ------------
 
-* An LDAP directory service
 * Apache 2.2 or higher
 * PHP 5.6 or higher
 * PHP JSON extension
@@ -62,30 +62,37 @@ Installation
 
 4.  Copy the file `config/config-sample.ini` to `config/config.ini` and edit the settings as required.
 
-5.  Set up authnz_ldap for your virtual host (or any other authentication module that will pass on an Auth-user
-    variable to the application).
+5.  Set up authentication for your virtual host. The Auth-user variable must be passed to the application.
 
-6.  Set `scripts/ldap_update.php` to run on a regular cron job.
+6.  Set `scripts/cron.php` to run on a regular cron job.
 
 7.  Generate an SSH key pair to synchronize with. SSH Key Authority will expect to find the files as `config/keys-sync` and `config/keys-sync.pub` for the private and public keys respectively.
 
-8.  Install the SSH key synchronization daemon. For systemd:
+8.  Install the SSH key synchronization daemon. 
 
-    1.  Copy `services/systemd/keys-sync.service` to `/etc/systemd/system/`
-    2.  Modify `ExecStart` path and `User` as necessary. If SSH Key Authority is installed under `/home`, disable `ProtectHome`.
-    3.  `systemctl daemon-reload`
-    4.  `systemctl enable keys-sync.service`
+    * For systemd:
 
-    for sysv-init:
+        1.  Copy `services/systemd/keys-sync.service` to `/etc/systemd/system/`
+        2.  Modify `ExecStart` path and `User` as necessary. If SSH Key Authority is installed under `/home`, disable `ProtectHome`.
+        3.  `systemctl daemon-reload`
+        4.  `systemctl enable keys-sync.service`
 
-    1.  Copy `services/init.d/keys-sync` to `/etc/init.d/`
-    2.  Modify `SCRIPT` path and `USER` as necessary.
-    3.  `update-rc.d keys-sync defaults`
+    * For sysv-init:
+
+        1.  Copy `services/init.d/keys-sync` to `/etc/init.d/`
+        2.  Modify `SCRIPT` path and `USER` as necessary.
+        3.  `update-rc.d keys-sync defaults`
+
+    * Manual:
+
+        1. Make sure that `scripts/syncd.php --user keys-sync` is executed whenever the system is restarted
 
 Usage
 -----
 
-Anyone in the LDAP group defined under `admin_group_cn` in `config/config.ini` will be able to manage accounts and servers.
+If LDAP is enabed anyone in the LDAP group defined under `admin_group_cn` in `config/config.ini` will be able to manage accounts and servers.
+
+Without LDAP, only the `keys-sync` users will be available after installation. With that user, it is possible to add new administrators or normal users.
 
 Key distribution
 ----------------
@@ -125,10 +132,6 @@ Screenshots
 
 ### Getting started guide for new users
 ![Getting started guide for new users](public_html/screenshot-getting-started.png)
-
-Security advisories
--------------------
-* [SKA security advisory: SSH port redirection attack](https://github.com/operasoftware/ssh-key-authority/wiki/SKA-security-advisory%3A-SSH-port-redirection-attack)
 
 License
 -------
