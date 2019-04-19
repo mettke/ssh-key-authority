@@ -1,20 +1,4 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 /**
 * Class that represents a stored SSH public key
 */
@@ -33,14 +17,15 @@ class PublicKey extends Record {
 	* @throws InvalidArgumentException if the public key cannot be parsed or is not sufficiently secure
 	*/
 	public function import($key, $uid = null, $force = false) {
+		global $config;
 		// Remove newlines (often included by accident) and trim
 		$key = str_replace(array("\r", "\n"), array(), trim($key));
 
 		// Initial sanity check and determine minimum length for algorithm
 		if(preg_match('|^(ssh-[a-z]{3}) ([A-Za-z0-9+/]+={0,2})(?: (.*))?$|', $key, $matches)) {
-			$minbits = 4096;
+			$minbits = $config['general']['minimum_rsa_key_size'];
 		} elseif(preg_match('|^(ecdsa-sha2-nistp[0-9]+) ([A-Za-z0-9+/]+={0,2})(?: (.*))?$|', $key, $matches)) {
-			$minbits = 384;
+			$minbits = $config['general']['minimum_ecdsa_key_size'];
 		} elseif(preg_match('|^(ssh-ed25519) ([A-Za-z0-9+/]+={0,2})(?: (.*))?$|', $key, $matches)) {
 			$minbits = 256;
 		} else {
@@ -63,6 +48,7 @@ class PublicKey extends Record {
 		$this->fingerprint_sha256 = rtrim(base64_encode($hash_sha256), '=');
 		$this->randomart_md5 = $this->generate_randomart($hash_md5, "{$algorithm} {$this->keysize}", 'MD5');
 		$this->randomart_sha256 = $this->generate_randomart(bin2hex($hash_sha256), "{$algorithm} {$this->keysize}", 'SHA256');
+		$this->upload_date = date('Y-m-d H:i:s', time());
 
 		if($this->keysize < $minbits && !$force) {
 			throw new InvalidArgumentException("Insufficient bits in public key");

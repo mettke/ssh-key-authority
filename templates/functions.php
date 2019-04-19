@@ -1,24 +1,11 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 function show_event($event) {
 	$json = json_decode($event->details);
 	$details = hesc($event->details);
 	switch($json->action) {
+	case 'User add':
+		$details = 'Added user';
+		break;
 	case 'Server add':
 		$details = 'Added server to key management';
 		break;
@@ -85,7 +72,11 @@ function show_event($event) {
 			<a href="<?php outurl('/groups/'.urlencode($event->group->name))?>" class="group"><?php out($event->group->name) ?></a>
 			<?php } ?>
 		</td>
+		<?php if(is_null($event->actor->uid)) { ?>
+		<td>removed</td>
+		<?php } else { ?>
 		<td><a href="<?php outurl('/users/'.urlencode($event->actor->uid))?>" class="user"><?php out($event->actor->uid) ?></a></td>
+		<?php } ?>
 		<td><?php out($details, ESC_NONE) ?></td>
 		<td class="nowrap"><?php out($event->date) ?></td>
 	</tr>
@@ -121,7 +112,7 @@ function keygen_help($box_position) {
 				<li>Select the type of key to generate. RSA, ECDSA or ED25519 are good choices.
 				<li>For RSA, enter "4096" as the number of bits in the generated key. For ECDSA, use either the nistp384 or nistp521 curve.
 				<li>Click the Generate button.
-				<li>Provide a comment for the key: it is a very good idea to include your user name and the current date in the comment to make the key easier to identify.
+				<li>Provide a comment for the key: This comment allows to identify your key. Best thing is to use your username or email address.
 				<li><strong>Provide a key passphrase.</strong>
 				<li>Save the private key to your local machine.
 				<li>Select and copy the contents of the "Public key for pasting into OpenSSH authorized_keys file" section at the top of the window (scrollable, make sure to select all).
@@ -140,9 +131,19 @@ function keygen_help($box_position) {
 			<p>On Mac you can generate a key pair with the ssh-keygen command.</p>
 			<ol>
 				<li>Start the "Terminal" program.
-				<li>Run the following command: <code>ssh-keygen -t rsa -b 4096 -C '<var>comment</var>'</code>, replacing '<var>comment</var>' with your own comment - a good idea is to include your user name and the current date in the comment to make the key easier to identify.
+				<li>Run one of the following commands. Make sure to replace '<var>comment</var>' with a text that identifies you. Best thing is to use your username or email address.
+					<ul>
+						<li>rsa: <code>ssh-keygen -t rsa -b 4096 -C '<var>comment</var>'</code>
+						<li>ecdsa: <code>ssh-keygen -t ecdsa -b 256 -C '<var>comment</var>'</code>
+						<li>ed25519: <code>ssh-keygen -t ed25519 -C '<var>comment</var>'</code>
+					</ul>
 				<li><strong>Make sure that you give the key a passphrase when prompted.</strong>
-				<li>A new text file will have been created in a <code>.ssh</code> directory called <code>id_rsa.pub</code>.  Copy the contents of that file into your clipboard.
+				<li>A new text file will have been created in a <code>.ssh</code> directory. Copy the contents of one of the following files into your clipboard (depends on the algorithm you used).
+					<ul>
+						<li>rsa: <code>id_rsa.pub</code>
+						<li>ecdsa: <code>id_ecdsa.pub</code>
+						<li>ed25519: <code>id_ed25519.pub</code>
+					</ul>
 				<?php if(!is_null($box_position)) { ?>
 				<li>Paste the public key that you just copied into the box <?php out($box_position)?> and click the "Add public key" button.
 				<?php } ?>
@@ -152,13 +153,22 @@ function keygen_help($box_position) {
 			<p>On Linux you can generate a key pair with the ssh-keygen command.</p>
 			<ol>
 				<li>Open a terminal on your machine
-				<li>
-					Run the following command: <code>ssh-keygen -t rsa -b 4096 -C '<var>comment</var>'</code>, replacing '<var>comment</var>' with your own comment - a good idea is to include your user name and the current date in the comment to make the key easier to identify.
+				<li>Run one of the following commands. Make sure to replace '<var>comment</var>' with a text that identifies you. Best thing is to use your username or email address.
+					<ul>
+						<li>rsa: <code>ssh-keygen -t rsa -b 4096 -C '<var>comment</var>'</code>
+						<li>ecdsa: <code>ssh-keygen -t ecdsa -b 256 -C '<var>comment</var>'</code>
+						<li>ed25519: <code>ssh-keygen -t ed25519 -C '<var>comment</var>'</code>
+					</ul>
 					<div class="alert alert-info">
 						Note: if this command fails with a message of "ssh-keygen: command not found", you need to install the openssh-client package: <code>sudo apt-get install openssh-client</code> on Debian-based systems.
 					</div>
 				<li><strong>Make sure that you give the key a passphrase when prompted.</strong>
-				<li>Run <code>cat ~/.ssh/id_rsa.pub</code>.  The output is your public key.  Copy it into your clipboard.
+				<li>A new text file will have been created in a <code>.ssh</code> directory. Copy the contents of one of the following files into your clipboard (depends on the algorithm you used).
+					<ul>
+						<li>rsa: <code>id_rsa.pub</code>
+						<li>ecdsa: <code>id_ecdsa.pub</code>
+						<li>ed25519: <code>id_ed25519.pub</code>
+					</ul>
 				<?php if(!is_null($box_position)) { ?>
 				<li>Paste the public key that you just copied into the box <?php out($box_position)?> and click the "Add public key" button.
 				<?php } ?>
@@ -178,6 +188,7 @@ function pubkey_json($pubkey, $include_keydata = true, $include_owner = true) {
 	$json->fingerprint = $pubkey->fingerprint_md5;
 	$json->fingerprint_md5 = $pubkey->fingerprint_md5;
 	$json->fingerprint_sha256 = $pubkey->fingerprint_sha256;
+	$json->upload_date = $pubkey->upload_date;
 	if($include_owner) {
 		$json->owner = new StdClass;
 		$json->owner->type = get_class($pubkey->owner);

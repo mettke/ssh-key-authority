@@ -1,20 +1,4 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 try {
 	$user = $user_dir->get_user_by_uid($router->vars['username']);
 } catch(UserNotFoundException $e) {
@@ -48,9 +32,16 @@ if(isset($_POST['reassign_servers']) && is_array($_POST['servers']) && $active_u
 	}
 } elseif(isset($_POST['edit_user']) && $active_user->admin) {
 	$user->force_disable = $_POST['force_disable'];
-	$user->get_details_from_ldap();
+	if($active_user->auth_realm == 'LDAP' ) {
+		$user->get_details_from_ldap();
+	}
 	$user->update();
 	redirect('#settings');
+} elseif(isset($_POST['delete_user']) && $active_user->admin) {
+	if($user->auth_realm == 'local' && $user->uid != 'keys-sync' ) {
+		$user->delete();
+	}
+	redirect('/users');
 } else {
 	$content = new PageSection('user');
 	$content->set('user', $user);

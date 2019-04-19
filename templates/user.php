@@ -1,20 +1,3 @@
-<?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-?>
 <h1><span class="glyphicon glyphicon-user" title="User"></span> <?php out($this->get('user')->name)?> <small>(<?php out($this->get('user')->uid)?>)</small><?php if(!$this->get('user')->active) out(' <span class="label label-default">Inactive</span>', ESC_NONE)?></h1>
 <dl>
 	<dt>Account type</dt>
@@ -208,7 +191,13 @@
 							}
 							?>
 						</td>
-						<td class="<?php out($class)?>"><?php out($sync_details) ?></td>
+						<td class="<?php out($class)?>"><?php 
+						if($server->key_management == 'keys') {
+							out($sync_details);
+						} else {
+							out("Unmanaged");
+						}
+						?></td>
 					</tr>
 					<?php } ?>
 				</tbody>
@@ -216,6 +205,17 @@
 			<p><button type="button" class="btn btn-default" data-reassign="admined_servers">Reassign servers</button></p>
 		</form>
 		<?php } ?>
+		<?php } ?>
+		<?php if($this->get('user')->auth_realm == 'local' && $this->get('admin')) { ?>
+		<h3>User managment</h3>
+		<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="form-horizontal">
+			<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+			<div class="form-group">
+				<div class="col-sm-2">
+					<button type="submit" name="delete_user" value="1" class="btn btn-primary">Delete user</button>
+				</div>
+			</div>
+		</form>
 		<?php } ?>
 	</div>
 	<?php if($this->get('user')->auth_realm == 'LDAP') { ?>

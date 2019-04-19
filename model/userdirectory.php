@@ -1,20 +1,4 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 /**
 * Class for reading/writing to the list of User objects in the database.
 */
@@ -45,13 +29,23 @@ class UserDirectory extends DBDirectory {
 		$user_active = $user->active;
 		$user_admin = $user->admin;
 		$user_email = $user->email;
-		$stmt = $this->database->prepare("INSERT INTO entity SET type = 'user'");
-		$stmt->execute();
-		$user->entity_id = $stmt->insert_id;
-		$stmt = $this->database->prepare("INSERT INTO user SET entity_id = ?, uid = ?, name = ?, email = ?, active = ?, admin = ?");
-		$stmt->bind_param('dsssdd', $user->entity_id, $user_id, $user_name, $user_email, $user_active, $user_admin);
-		$stmt->execute();
-		$stmt->close();
+		try {
+			$stmt = $this->database->prepare("INSERT INTO entity SET type = 'user'");
+			$stmt->execute();
+			$user->entity_id = $stmt->insert_id;
+			$stmt = $this->database->prepare("INSERT INTO user SET entity_id = ?, uid = ?, name = ?, email = ?, active = ?, admin = ?, auth_realm = ?");
+			$stmt->bind_param('dsssdds', $user->entity_id, $user_id, $user_name, $user_email, $user_active, $user_admin, $user->auth_realm);
+			$stmt->execute();
+			$stmt->close();
+		} catch(mysqli_sql_exception $e) {
+			if($e->getCode() == 1062) {
+				// Duplicate entry
+				throw new UserAlreadyExistsException("User {$user->uid} already exists");
+			} else {
+				throw $e;
+			}
+		}	
+		$user->log(array('action' => 'User add'));	
 	}
 
 	/**
@@ -82,6 +76,46 @@ class UserDirectory extends DBDirectory {
 	* @throws UserNotFoundException if no user with that uid exists
 	*/
 	public function get_user_by_uid($uid) {
+		global $config, $group_dir, $active_user;
+		$ldap_enabled = $config['ldap']['enabled'];
+		$group_sync_enabled = $config['ldap']['full_group_sync'];
+		try {
+			$user = $this->_get_user_by_uid($uid);
+		} catch(UserNotFoundException $e) {
+			if ($ldap_enabled == 1) {
+				$active_user = $this->_get_user_by_uid('keys-sync');
+				$user = new User;
+				$user->uid = $uid;
+				$this->cache_uid[$uid] = $user;
+				$user->auth_realm = 'LDAP';
+
+				$user->get_details_from_ldap();
+				$ldap_groups = array_map(function($group) {
+					return $group["cn"];
+				}, $user->ldapgroups);
+				$this->add_user($user);
+
+				if($group_sync_enabled == 1) {
+					foreach($ldap_groups as $group) {
+						try {
+							$grp = $group_dir->get_group_by_name($group);
+						} catch(GroupNotFoundException $e) {
+							$grp = new Group;
+							$grp->name = $group;
+							$grp->system = 1;
+							$group_dir->add_group($grp);
+						}
+						$grp->add_member($user);
+					}
+				}
+			} else {
+				throw new UserNotFoundException('User does not exist.');
+			}
+		}
+		return $user;
+	}
+
+	private function _get_user_by_uid($uid) {
 		if(isset($this->cache_uid[$uid])) {
 			return $this->cache_uid[$uid];
 		}
@@ -93,11 +127,7 @@ class UserDirectory extends DBDirectory {
 			$user = new User($row['entity_id'], $row);
 			$this->cache_uid[$uid] = $user;
 		} else {
-			$user = new User;
-			$user->uid = $uid;
-			$this->cache_uid[$uid] = $user;
-			$user->get_details_from_ldap();
-			$this->add_user($user);
+			throw new UserNotFoundException('User does not exist.');
 		}
 		$stmt->close();
 		return $user;
@@ -148,3 +178,4 @@ class UserDirectory extends DBDirectory {
 }
 
 class UserNotFoundException extends Exception {}
+class UserAlreadyExistsException extends Exception {}

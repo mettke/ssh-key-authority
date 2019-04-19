@@ -1,20 +1,3 @@
-/*
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-*/
 'use strict';
 
 // Handle 'navigate-back' links
@@ -185,14 +168,19 @@ $(function() {
 		var ao_command_value = $("input[name='access_option[command][value]']", form);
 		var ao_from_enabled = $("input[name='access_option[from][enabled]']", form);
 		var ao_from_value = $("input[name='access_option[from][value]']", form);
+		var ao_env_enabled = $("input[name='access_option[environment][enabled]']", form);
+		var ao_env_value = $("input[name='access_option[environment][value]']", form);
 		ao_command_enabled.on('click', function() {ao_update_disabled()});
 		ao_from_enabled.on('click', function() {ao_update_disabled()});
+		ao_env_enabled.on('click', function() {ao_update_disabled()});
 		ao_update_disabled();
 		function ao_update_disabled() {
 			ao_command_value.prop('disabled', !ao_command_enabled.prop('checked'));
 			ao_command_value.prop('required', ao_command_enabled.prop('checked'));
 			ao_from_value.prop('disabled', !ao_from_enabled.prop('checked'));
 			ao_from_value.prop('required', ao_from_enabled.prop('checked'));
+			ao_env_value.prop('disabled', !ao_env_enabled.prop('checked'));
+			ao_env_value.prop('required', ao_env_enabled.prop('checked'));
 		}
 	});
 });
@@ -205,12 +193,17 @@ $(function() {
 		var ao_command_value = $("input[name='access_option[command][value]']", form);
 		var ao_from_enabled = $("input[name='access_option[from][enabled]']", form);
 		var ao_from_value = $("input[name='access_option[from][value]']", form);
+		var ao_env_enabled = $("input[name='access_option[environment][enabled]']", form);
+		var ao_env_value = $("input[name='access_option[environment][value]']", form);
+		var ao_noagentfwd_enabled = $("input[name='access_option[no-agent-forwarding][enabled]']", form);
 		var ao_noportfwd_enabled = $("input[name='access_option[no-port-forwarding][enabled]']", form);
 		var ao_nox11fwd_enabled = $("input[name='access_option[no-X11-forwarding][enabled]']", form);
+		var ao_nouserrc_enabled = $("input[name='access_option[no-user-rc][enabled]']", form);
 		var ao_nopty_enabled = $("input[name='access_option[no-pty][enabled]']", form);
 
 		ao_command_enabled.on('click', function() {ao_update_disabled()});
 		ao_from_enabled.on('click', function() {ao_update_disabled()});
+		ao_env_enabled.on('click', function() {ao_update_disabled()});
 
 		$("button[type='button']", form).on('click', function(e) {
 			var preset
@@ -218,11 +211,14 @@ $(function() {
 				$('input:checkbox', form).val([]);
 				ao_command_value.val('');
 				ao_from_value.val('');
+				ao_env_value.val('');
 				if(preset == 'command' || preset == 'dbbackup') {
 					ao_command_enabled.prop('checked', true);
 					ao_command_value.focus();
+					ao_noagentfwd_enabled.prop('checked', true);
 					ao_noportfwd_enabled.prop('checked', true);
 					ao_nox11fwd_enabled.prop('checked', true);
+					ao_nouserrc_enabled.prop('checked', true);
 					ao_nopty_enabled.prop('checked', true);
 				}
 				if(preset == 'dbbackup') {
@@ -237,6 +233,8 @@ $(function() {
 			ao_command_value.prop('required', ao_command_enabled.prop('checked'));
 			ao_from_value.prop('disabled', !ao_from_enabled.prop('checked'));
 			ao_from_value.prop('required', ao_from_enabled.prop('checked'));
+			ao_env_value.prop('disabled', !ao_env_enabled.prop('checked'));
+			ao_env_value.prop('required', ao_env_enabled.prop('checked'));
 		}
 	});
 });

@@ -1,20 +1,5 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
+global $config;
 try {
 	$server = $server_dir->get_server_by_hostname($router->vars['hostname']);
 	$server_admin = $active_user->admin_of($server);
@@ -141,11 +126,16 @@ if(isset($_POST['add_access']) && ($server_admin || $account_admin || $active_us
 		$content = new PageSection('key_upload_fail');
 		switch($e->getMessage()) {
 		case 'Insufficient bits in public key':
-			$content->set('message', "The public key you submitted is of insufficient strength; it must be at least 4096 bits.");
+			$minbits_rsa = $config['general']['minimum_rsa_key_size'];
+			$minbits_ecdsa = $config['general']['minimum_ecdsa_key_size'];
+			$content->set('message', "The public key you submitted is of insufficient strength; it must be at least " . $minbits_rsa . " bits for rsa and " . $minbits_ecdsa . " for ecdsa.");
 			break;
 		default:
 			$content->set('message', "The public key you submitted doesn't look valid.");
 		}
+	} catch(PublicKeyAlreadyKnownException $e) {
+		$content = new PageSection('key_upload_fail');
+		$content->set('message', "The public key you submitted is already in use. Please create a new one.");
 	}
 } elseif(isset($_POST['delete_public_key']) && ($server_admin || $account_admin || $active_user->admin)) {
 	foreach($pubkeys as $pubkey) {

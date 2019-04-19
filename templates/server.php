@@ -1,20 +1,3 @@
-<?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-?>
 <h1><span class="glyphicon glyphicon-hdd" title="Server"></span> <?php out($this->get('server')->hostname)?><?php if($this->get('server')->key_management == 'decommissioned') out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?></h1>
 <?php if($this->get('admin') || $this->get('server_admin')) { ?>
 <?php if($this->get('server')->key_management == 'keys') { ?>
@@ -340,10 +323,20 @@
 					</div>
 					<input type="text" id="from_value" name="access_option[from][value]" value="<?php if(isset($options['from'])) out($options['from']->value); ?>" class="form-control">
 					<div class="checkbox">
+						<label><input type="checkbox" name="access_option[environment][enabled]"<?php if(isset($options['environment'])) out(' checked'); ?>> Define environment variables (<code>environment=&quot;KEY1=VAL KEY2=VAL&quot;</code>)</label>
+					</div>
+					<input type="text" id="environment_value" name="access_option[environment][value]" value="<?php if(isset($options['environment'])) out($options['environment']->value); ?>" class="form-control">
+					<div class="checkbox">
+						<label><input type="checkbox" name="access_option[no-agent-forwarding][enabled]"<?php if(isset($options['no-agent-forwarding'])) out(' checked'); ?>> Disallow agent forwarding (<code>no-agent-forwarding</code>)</label>
+					</div>
+					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-port-forwarding][enabled]"<?php if(isset($options['no-port-forwarding'])) out(' checked'); ?>> Disallow port forwarding (<code>no-port-forwarding</code>)</label>
 					</div>
 					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-X11-forwarding][enabled]"<?php if(isset($options['no-X11-forwarding'])) out(' checked'); ?>> Disallow X11 forwarding (<code>no-X11-forwarding</code>)</label>
+					</div>
+					<div class="checkbox">
+						<label><input type="checkbox" name="access_option[no-user-rc][enabled]"<?php if(isset($options['no-user-rc'])) out(' checked'); ?>> Disables execution of ~/.ssh/rc (<code>no-user-rc</code>)</label>
 					</div>
 					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-pty][enabled]"<?php if(isset($options['no-pty'])) out(' checked'); ?>> Disable terminal (<code>no-pty</code>)</label>
@@ -451,7 +444,7 @@
 			<div class="panel panel-default">
 				<div class="panel-body pre-formatted"><?php out($this->get('output_formatter')->comment_format($note->note), ESC_NONE)?></div>
 				<div class="panel-footer">
-					Added <?php out($note->date)?> by <?php out($note->user->name)?>
+					Added <?php out($note->date)?> by <?php if(is_null($note->user->uid)) { ?>removed<?php } else { ?><a href="<?php outurl('/users/'.urlencode($note->user->uid))?>" class="user"><?php out($note->user->uid) ?></a><?php } ?>
 					<button name="delete_note" value="<?php out($note->id)?>" class="pull-right btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span> Delete</button>
 				</div>
 			</div>

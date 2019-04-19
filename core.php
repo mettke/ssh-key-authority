@@ -1,20 +1,4 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 chdir(dirname(__FILE__));
 mb_internal_encoding('UTF-8');
 date_default_timezone_set('UTC');
@@ -35,10 +19,12 @@ require('routes.php');
 require('ldap.php');
 require('email.php');
 
-$ldap_options = array();
-$ldap_options[LDAP_OPT_PROTOCOL_VERSION] = 3;
-$ldap_options[LDAP_OPT_REFERRALS] = !empty($config['ldap']['follow_referrals']);
-$ldap = new LDAP($config['ldap']['host'], $config['ldap']['starttls'], $config['ldap']['bind_dn'], $config['ldap']['bind_password'], $ldap_options);
+if ($config['ldap']['enabled'] == 1) {
+	$ldap_options = array();
+	$ldap_options[LDAP_OPT_PROTOCOL_VERSION] = 3;
+	$ldap_options[LDAP_OPT_REFERRALS] = !empty($config['ldap']['follow_referrals']);
+	$ldap = new LDAP($config['ldap']['host'], $config['ldap']['starttls'], $config['ldap']['bind_dn'], $config['ldap']['bind_password'], $ldap_options);
+}
 setup_database();
 
 $relative_frontend_base_url = (string)parse_url($config['web']['baseurl'], PHP_URL_PATH);

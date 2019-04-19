@@ -1,19 +1,4 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
 switch($this->get('account')->sync_status) {
 case 'proposed': $sync_class = 'info'; $sync_message = 'Requested'; break;
 case 'sync success': $sync_class = 'success'; $sync_message = 'Synced'; break;
@@ -374,11 +359,6 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 				<label for="add_public_key">Public key</label>
 				<textarea class="form-control" rows="4" id="add_public_key" name="add_public_key" required></textarea>
 			</div>
-			<?php if($this->get('active_user')->admin) { ?>
-			<div class="checkbox">
-				<label><input type="checkbox" name="force"> Allow weak (< 4096 bits) key</label>
-			</div>
-			<?php } ?>
 			<div class="form-group"><button class="btn btn-primary btn-lg btn-block">Add public key to account</button></div>
 		</form>
 	</div>

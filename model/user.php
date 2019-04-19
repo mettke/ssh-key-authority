@@ -1,20 +1,4 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 /**
 * Class that represents a user of this system
 */
@@ -64,6 +48,23 @@ class User extends Entity {
 		if($resync) {
 			$this->sync_remote_access();
 		}
+	}
+
+	/**
+	* Delete the given user.
+	*/
+	public function delete() {
+		if(is_null($this->entity_id)) throw new BadMethodCallException('User must be in directory before it can be removed');
+		$stmt = $this->database->prepare("DELETE FROM entity WHERE id = ?");
+		$stmt->bind_param('d', $this->entity_id);
+		$stmt->execute();
+		$stmt->close();
+		$stmt = $this->database->prepare("DELETE FROM user WHERE entity_id = ?");
+		$stmt->bind_param('d', $this->entity_id);
+		$stmt->execute();
+		$stmt->close();
+		
+		$this->sync_remote_access();
 	}
 
 	/**
@@ -326,8 +327,8 @@ class User extends Entity {
 			}
 			$this->admin = 0;
 			$group_member = $ldapuser[strtolower($config['ldap']['group_member_value'])];
-			$ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).'='.LDAP::escape($group_member), array('cn'));
-			foreach($ldapgroups as $ldapgroup) {
+			$this->ldapgroups = $this->ldap->search($config['ldap']['dn_group'], LDAP::escape($config['ldap']['group_member']).'='.LDAP::escape($group_member), array('cn'));
+			foreach($this->ldapgroups as $ldapgroup) {
 				if($ldapgroup['cn'] == $config['ldap']['admin_group_cn']) $this->admin = 1;
 			}
 		} else {

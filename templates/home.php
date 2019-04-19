@@ -1,20 +1,3 @@
-<?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-?>
 <h1>Keys management</h1>
 <p>Welcome to the SSH Key Authority server.</p>
 <?php if(count($this->get('user_keys')) == 0) { ?>
@@ -161,7 +144,13 @@
 				out($admin_list, ESC_NONE);
 				?>
 			</td>
-			<td rowspan="2" class="<?php out($class)?>"><?php out($sync_details) ?></td>
+			<td rowspan="2" class="<?php out($class)?>"><?php 
+			if($server->key_management == 'keys') {
+				out($sync_details);
+			} else {
+				out("Unmanaged");
+			}
+			?></td>
 		</tr>
 		<tr>
 			<td colspan="2" class="indented">

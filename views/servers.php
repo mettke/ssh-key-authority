@@ -1,22 +1,7 @@
 <?php
-##
-## Copyright 2013-2017 Opera Software AS
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-## http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 if(isset($_POST['add_server']) && ($active_user->admin)) {
 	$hostname = trim($_POST['hostname']);
+	$key_management = trim($_POST['key_management']);
 	if(!preg_match('|.*\..*\..*|', $hostname)) {
 		$content = new PageSection('invalid_hostname');
 		$content->set('hostname', $hostname);
@@ -46,23 +31,33 @@ if(isset($_POST['add_server']) && ($active_user->admin)) {
 			$server = new Server;
 			$server->hostname = $hostname;
 			$server->port = $_POST['port'];
-			try {
-				$server_dir->add_server($server);
-				foreach($admins as $admin) {
-					$server->add_admin($admin);
-				}
-				$alert = new UserAlert;
-				$alert->content = 'Server \'<a href="'.rrurl('/servers/'.urlencode($hostname)).'" class="alert-link">'.hesc($hostname).'</a>\' successfully created.';
-				$alert->escaping = ESC_NONE;
-				$active_user->add_alert($alert);
-			} catch(ServerAlreadyExistsException $e) {
-				$alert = new UserAlert;
-				$alert->content = 'Server \'<a href="'.rrurl('/servers/'.urlencode($hostname)).'" class="alert-link">'.hesc($hostname).'</a>\' is already known by SSH Key Authority.';
-				$alert->escaping = ESC_NONE;
-				$alert->class = 'danger';
-				$active_user->add_alert($alert);
+			switch($key_management) {
+				case 'keys':
+				case 'other':
+				case 'none':
+					$server->key_management = $key_management;
+					try {
+						$server_dir->add_server($server);
+						foreach($admins as $admin) {
+							$server->add_admin($admin);
+						}
+						$alert = new UserAlert;
+						$alert->content = 'Server \'<a href="'.rrurl('/servers/'.urlencode($hostname)).'" class="alert-link">'.hesc($hostname).'</a>\' successfully created.';
+						$alert->escaping = ESC_NONE;
+						$active_user->add_alert($alert);
+					} catch(ServerAlreadyExistsException $e) {
+						$alert = new UserAlert;
+						$alert->content = 'Server \'<a href="'.rrurl('/servers/'.urlencode($hostname)).'" class="alert-link">'.hesc($hostname).'</a>\' is already known by SSH Key Authority.';
+						$alert->escaping = ESC_NONE;
+						$alert->class = 'danger';
+						$active_user->add_alert($alert);
+					}
+					redirect('#add');
+					break;
+				default:
+					$content = new PageSection('invalid_key_managment');
+					$content->set('management', $key_management);
 			}
-			redirect('#add');
 		}
 	}
 } else {
