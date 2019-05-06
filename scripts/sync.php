@@ -446,7 +446,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 								echo "Unable to transfer file using scp";
 							}
 							if($success) {
-								$ssh->exec('/usr/bin/env chmod 600 '.escapeshellarg($remote_filename));
+								$ssh->exec('/usr/bin/env chmod 644 '.escapeshellarg($remote_filename));
 								$success = !is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0;
 								if(!$success) {
 									echo "Unable to change permission";

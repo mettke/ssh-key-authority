@@ -37,6 +37,7 @@ class UserDirectory extends DBDirectory {
 			$stmt->bind_param('dsssdds', $user->entity_id, $user_id, $user_name, $user_email, $user_active, $user_admin, $user->auth_realm);
 			$stmt->execute();
 			$stmt->close();
+			$user->log(array('action' => 'User add'));	
 		} catch(mysqli_sql_exception $e) {
 			if($e->getCode() == 1062) {
 				// Duplicate entry
@@ -45,7 +46,6 @@ class UserDirectory extends DBDirectory {
 				throw $e;
 			}
 		}	
-		$user->log(array('action' => 'User add'));	
 	}
 
 	/**
