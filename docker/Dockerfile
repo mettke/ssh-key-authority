@@ -35,4 +35,4 @@ VOLUME /ska/config
 VOLUME /public_html
 
 ENTRYPOINT "/entrypoint.sh"
-HEALTHCHECK CMD /healcheck.sh
+HEALTHCHECK CMD /healthcheck.sh
