@@ -49,7 +49,7 @@
 				<label for="email">Mail Address</label>
 				<input type="email" id="email" name="email" class="form-control" required>
 			</div>		
-			<input type="checkbox" name="admin" value="admin">Administrator<br><br>
+			<input type="checkbox" name="admin" value="admin"> Administrator<br><br>
 			<button type="submit" name="add_user" value="1" class="btn btn-primary">Add user</button>
 		</form>
 	</div>
