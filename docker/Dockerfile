@@ -20,9 +20,8 @@ RUN mkdir -p /var/log/keys/ /run/php/ /ska/ && \
             rsync \
             ssmtp \
             sudo && \
-    sed -i -e '/listen =/ s/= .*/= 0.0.0.0:9000/' /etc/php7/php-fpm.d/www.conf && \
+    sed -i -e '/listen =/ s/= .*/= 9000/' /etc/php7/php-fpm.d/www.conf && \
     sed -i -e '/;pid =/ s/.*/pid = \/var\/run\/php-fpm.pid/' /etc/php7/php-fpm.conf && \
-    echo "" >> /etc/php7/php-fpm.conf && \
     chmod +x /entrypoint.sh /healthcheck.sh && \
     ln -sf /dev/stderr /var/log/php7/error.log
 RUN apk add git && \
