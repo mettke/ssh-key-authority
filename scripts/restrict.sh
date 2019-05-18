@@ -28,7 +28,7 @@ case "$cmd" in
                 eval "${@}";
                 exit $?;
                 ;;
-            "chmod 600 '/var/local/keys-sync/"*)
+            "chmod 644 '/var/local/keys-sync/"*)
                 eval "${@}";
                 exit $?;
                 ;;

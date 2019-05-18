@@ -311,7 +311,7 @@ function sync_server($id, $only_username = null, $preview = false) {
 		$dir = null;
 		$sync_warning = 'Key directory does not exist';
 	}
-	if($legacy && !$sync_warning) {
+	if($legacy) {
 		$sync_warning = 'Using legacy sync method';
 	}
 
@@ -400,13 +400,16 @@ function sync_server($id, $only_username = null, $preview = false) {
 		try {		
 			$success = false;			
 			$entries = explode("\n", $ssh->exec('/usr/bin/env sha1sum '.escapeshellarg($keydir).'/*'));
+			$sha1sums = array();
 			if(!is_bool($ssh->getExitStatus()) && $ssh->getExitStatus() == 0) {
-				$sha1sums = array();
 				foreach($entries as $entry) {
 					if(preg_match('|^([0-9a-f]{40})  '.preg_quote($keydir, '|').'/(.*)$|', $entry, $matches)) {
 						$sha1sums[$matches[2]] = $matches[1];
 					}
 				}
+				$success = true;
+			} elseif($ssh->getExitStatus() == 1) {
+				// No files in directory
 				$success = true;
 			}
 		} catch(ErrorException $e) {}
