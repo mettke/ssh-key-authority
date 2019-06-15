@@ -81,7 +81,7 @@ if (!function_exists('crypt_random_string')) {
 /**
  * Include Crypt_Hash
  */
-if (!class_exists('Crypt_Hash', false)) {
+if (!class_exists('Crypt_Hash')) {
     include_once 'Hash.php';
 }
 
@@ -210,6 +210,10 @@ define('CRYPT_RSA_PRIVATE_FORMAT_XML', 2);
  * PKCS#8 formatted private key
  */
 define('CRYPT_RSA_PRIVATE_FORMAT_PKCS8', 8);
+/**
+ * OpenSSH formatted private key
+ */
+define('CRYPT_RSA_PRIVATE_FORMAT_OPENSSH', 9);
 /**#@-*/
 
 /**#@+
@@ -493,7 +497,7 @@ class Crypt_RSA
      */
     function __construct()
     {
-        if (!class_exists('Math_BigInteger', false)) {
+        if (!class_exists('Math_BigInteger')) {
             include_once 'Math/BigInteger.php';
         }
 
@@ -849,7 +853,7 @@ class Crypt_RSA
                 } else {
                     $private.= crypt_random_string(16 - (strlen($private) & 15));
                     $source.= pack('Na*', strlen($private), $private);
-                    if (!class_exists('Crypt_AES', false)) {
+                    if (!class_exists('Crypt_AES')) {
                         include_once 'Crypt/AES.php';
                     }
                     $sequence = 0;
@@ -870,7 +874,7 @@ class Crypt_RSA
                 $private = base64_encode($private);
                 $key.= 'Private-Lines: ' . ((strlen($private) + 63) >> 6) . "\r\n";
                 $key.= chunk_split($private, 64);
-                if (!class_exists('Crypt_Hash', false)) {
+                if (!class_exists('Crypt_Hash')) {
                     include_once 'Crypt/Hash.php';
                 }
                 $hash = new Crypt_Hash('sha1');
@@ -878,6 +882,58 @@ class Crypt_RSA
                 $key.= 'Private-MAC: ' . bin2hex($hash->hash($source)) . "\r\n";
 
                 return $key;
+            case CRYPT_RSA_PRIVATE_FORMAT_OPENSSH:
+                if ($num_primes != 2) {
+                    return false;
+                }
+                $publicKey = pack('Na*Na*Na*', strlen('ssh-rsa'), 'ssh-rsa', strlen($raw['publicExponent']), $raw['publicExponent'], strlen($raw['modulus']), $raw['modulus']);
+                $privateKey = pack(
+                    'Na*Na*Na*Na*Na*Na*Na*',
+                    strlen('ssh-rsa'),
+                    'ssh-rsa',
+                    strlen($raw['modulus']),
+                    $raw['modulus'],
+                    strlen($raw['publicExponent']),
+                    $raw['publicExponent'],
+                    strlen($raw['privateExponent']),
+                    $raw['privateExponent'],
+                    strlen($raw['coefficient']),
+                    $raw['coefficient'],
+                    strlen($raw['prime1']),
+                    $raw['prime1'],
+                    strlen($raw['prime2']),
+                    $raw['prime2']
+                );
+                $checkint = crypt_random_string(4);
+                $paddedKey = pack(
+                    'a*Na*',
+                    $checkint . $checkint . $privateKey,
+                    strlen($this->comment),
+                    $this->comment
+                );
+                $paddingLength = (7 * strlen($paddedKey)) % 8;
+                for ($i = 1; $i <= $paddingLength; $i++) {
+                    $paddedKey.= chr($i);
+                }
+                $key = pack(
+                    'Na*Na*Na*NNa*Na*',
+                    strlen('none'),
+                    'none',
+                    strlen('none'),
+                    'none',
+                    0,
+                    '',
+                    1,
+                    strlen($publicKey),
+                    $publicKey,
+                    strlen($paddedKey),
+                    $paddedKey
+                );
+                $key = "openssh-key-v1\0$key";
+
+                return "-----BEGIN OPENSSH PRIVATE KEY-----\r\n" .
+                       chunk_split(base64_encode($key), 70) .
+                       "-----END OPENSSH PRIVATE KEY-----";
             default: // eg. CRYPT_RSA_PRIVATE_FORMAT_PKCS1
                 $components = array();
                 foreach ($raw as $name => $value) {
@@ -922,7 +978,7 @@ class Crypt_RSA
                         $salt = crypt_random_string(8);
                         $iterationCount = 2048;
 
-                        if (!class_exists('Crypt_DES', false)) {
+                        if (!class_exists('Crypt_DES')) {
                             include_once 'Crypt/DES.php';
                         }
                         $crypto = new Crypt_DES();
@@ -977,7 +1033,7 @@ class Crypt_RSA
                     $iv = crypt_random_string(8);
                     $symkey = pack('H*', md5($this->password . $iv)); // symkey is short for symmetric key
                     $symkey.= substr(pack('H*', md5($symkey . $this->password . $iv)), 0, 8);
-                    if (!class_exists('Crypt_TripleDES', false)) {
+                    if (!class_exists('Crypt_TripleDES')) {
                         include_once 'Crypt/TripleDES.php';
                     }
                     $des = new Crypt_TripleDES();
@@ -1157,33 +1213,33 @@ class Crypt_RSA
                     }
                     switch ($matches[1]) {
                         case 'AES-256-CBC':
-                            if (!class_exists('Crypt_AES', false)) {
+                            if (!class_exists('Crypt_AES')) {
                                 include_once 'Crypt/AES.php';
                             }
                             $crypto = new Crypt_AES();
                             break;
                         case 'AES-128-CBC':
-                            if (!class_exists('Crypt_AES', false)) {
+                            if (!class_exists('Crypt_AES')) {
                                 include_once 'Crypt/AES.php';
                             }
                             $symkey = substr($symkey, 0, 16);
                             $crypto = new Crypt_AES();
                             break;
                         case 'DES-EDE3-CFB':
-                            if (!class_exists('Crypt_TripleDES', false)) {
+                            if (!class_exists('Crypt_TripleDES')) {
                                 include_once 'Crypt/TripleDES.php';
                             }
                             $crypto = new Crypt_TripleDES(CRYPT_DES_MODE_CFB);
                             break;
                         case 'DES-EDE3-CBC':
-                            if (!class_exists('Crypt_TripleDES', false)) {
+                            if (!class_exists('Crypt_TripleDES')) {
                                 include_once 'Crypt/TripleDES.php';
                             }
                             $symkey = substr($symkey, 0, 24);
                             $crypto = new Crypt_TripleDES();
                             break;
                         case 'DES-CBC':
-                            if (!class_exists('Crypt_DES', false)) {
+                            if (!class_exists('Crypt_DES')) {
                                 include_once 'Crypt/DES.php';
                             }
                             $crypto = new Crypt_DES();
@@ -1262,7 +1318,7 @@ class Crypt_RSA
                                 return false;
                             }
 
-                            if (!class_exists('Crypt_DES', false)) {
+                            if (!class_exists('Crypt_DES')) {
                                 include_once 'Crypt/DES.php';
                             }
                             $crypto = new Crypt_DES();
@@ -1448,7 +1504,7 @@ class Crypt_RSA
 
                 switch ($encryption) {
                     case 'aes256-cbc':
-                        if (!class_exists('Crypt_AES', false)) {
+                        if (!class_exists('Crypt_AES')) {
                             include_once 'Crypt/AES.php';
                         }
                         $symkey = '';
@@ -1496,6 +1552,75 @@ class Crypt_RSA
                     return false;
                 }
                 $components['coefficients'] = array(2 => new Math_BigInteger($this->_string_shift($private, $length), -256));
+
+                return $components;
+            case CRYPT_RSA_PRIVATE_FORMAT_OPENSSH:
+                $components = array();
+                $decoded = $this->_extractBER($key);
+                $magic = $this->_string_shift($decoded, 15);
+                if ($magic !== "openssh-key-v1\0") {
+                    return false;
+                }
+                $options = $this->_string_shift($decoded, 24);
+                // \0\0\0\4none = ciphername
+                // \0\0\0\4none = kdfname
+                // \0\0\0\0 = kdfoptions
+                // \0\0\0\1 = numkeys
+                if ($options != "\0\0\0\4none\0\0\0\4none\0\0\0\0\0\0\0\1") {
+                    return false;
+                }
+                extract(unpack('Nlength', $this->_string_shift($decoded, 4)));
+                if (strlen($decoded) < $length) {
+                    return false;
+                }
+                $publicKey = $this->_string_shift($decoded, $length);
+                extract(unpack('Nlength', $this->_string_shift($decoded, 4)));
+                if (strlen($decoded) < $length) {
+                    return false;
+                }
+                $paddedKey = $this->_string_shift($decoded, $length);
+
+                if ($this->_string_shift($publicKey, 11) !== "\0\0\0\7ssh-rsa") {
+                    return false;
+                }
+
+                $checkint1 = $this->_string_shift($paddedKey, 4);
+                $checkint2 = $this->_string_shift($paddedKey, 4);
+                if (strlen($checkint1) != 4 || $checkint1 !== $checkint2) {
+                    return false;
+                }
+
+                if ($this->_string_shift($paddedKey, 11) !== "\0\0\0\7ssh-rsa") {
+                    return false;
+                }
+
+                $values = array(
+                    &$components['modulus'],
+                    &$components['publicExponent'],
+                    &$components['privateExponent'],
+                    &$components['coefficients'][2],
+                    &$components['primes'][1],
+                    &$components['primes'][2]
+                );
+
+                foreach ($values as &$value) {
+                    extract(unpack('Nlength', $this->_string_shift($paddedKey, 4)));
+                    if (strlen($paddedKey) < $length) {
+                        return false;
+                    }
+                    $value = new Math_BigInteger($this->_string_shift($paddedKey, $length), -256);
+                }
+
+                extract(unpack('Nlength', $this->_string_shift($paddedKey, 4)));
+                if (strlen($paddedKey) < $length) {
+                    return false;
+                }
+                $components['comment'] = $this->_string_shift($decoded, $length);
+
+                $temp = $components['primes'][1]->subtract($this->one);
+                $components['exponents'] = array(1 => $components['publicExponent']->modInverse($temp));
+                $temp = $components['primes'][2]->subtract($this->one);
+                $components['exponents'][] = $components['publicExponent']->modInverse($temp);
 
                 return $components;
         }
@@ -1653,7 +1778,8 @@ class Crypt_RSA
                 CRYPT_RSA_PRIVATE_FORMAT_PKCS1,
                 CRYPT_RSA_PRIVATE_FORMAT_XML,
                 CRYPT_RSA_PRIVATE_FORMAT_PUTTY,
-                CRYPT_RSA_PUBLIC_FORMAT_OPENSSH
+                CRYPT_RSA_PUBLIC_FORMAT_OPENSSH,
+                CRYPT_RSA_PRIVATE_FORMAT_OPENSSH
             );
             foreach ($types as $type) {
                 $components = $this->_parseKey($key, $type);
@@ -2301,6 +2427,10 @@ class Crypt_RSA
      */
     function _equals($x, $y)
     {
+        if (function_exists('hash_equals')) {
+            return hash_equals($x, $y);
+        }
+
         if (strlen($x) != strlen($y)) {
             return false;
         }

@@ -2,6 +2,7 @@ FROM alpine
 LABEL maintainer="Marc Mettke <marc@itmettke.de>"
 
 ENV SYSTEM https://github.com/mettke/ssh-key-authority.git
+ENV TAG v2.0.4
 ADD entrypoint.sh /entrypoint.sh
 ADD healthcheck.sh /healthcheck.sh
 ADD cron /var/spool/cron/crontabs/root
@@ -26,6 +27,7 @@ RUN mkdir -p /var/log/keys/ /run/php/ /ska/ && \
     ln -sf /dev/stderr /var/log/php7/error.log
 RUN apk add git && \
     git clone ${SYSTEM} /ska && \
+   git -C /ska checkout ${TAG} && \
     apk del git && \
     chown -R keys-sync:nogroup /ska/config
 
