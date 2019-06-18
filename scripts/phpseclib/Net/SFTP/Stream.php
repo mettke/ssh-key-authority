@@ -152,7 +152,7 @@ class Net_SFTP_Stream
             echo "__construct()\r\n";
         }
 
-        if (!class_exists('Net_SFTP')) {
+        if (!class_exists('Net_SFTP', false)) {
             include_once 'Net/SFTP.php';
         }
     }

@@ -58,7 +58,7 @@
  *
  * Base cipher class
  */
-if (!class_exists('Crypt_Base')) {
+if (!class_exists('Crypt_Base', false)) {
     include_once 'Base.php';
 }
 

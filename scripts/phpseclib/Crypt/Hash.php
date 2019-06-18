@@ -654,7 +654,7 @@ class Crypt_Hash
      */
     function _sha512($m)
     {
-        if (!class_exists('Math_BigInteger')) {
+        if (!class_exists('Math_BigInteger', false)) {
             include_once 'Math/BigInteger.php';
         }
 

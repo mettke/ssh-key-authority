@@ -262,7 +262,7 @@ class File_ASN1
         static $static_init = null;
         if (!$static_init) {
             $static_init = true;
-            if (!class_exists('Math_BigInteger')) {
+            if (!class_exists('Math_BigInteger', false)) {
                 include_once 'Math/BigInteger.php';
             }
         }
@@ -550,7 +550,7 @@ class File_ASN1
                 break;
             case FILE_ASN1_TYPE_UTC_TIME:
             case FILE_ASN1_TYPE_GENERALIZED_TIME:
-                $current['content'] = class_exists('DateTime') ?
+                $current['content'] = class_exists('DateTime', false) ?
                     $this->_decodeDateTime(substr($content, $content_pos), $tag) :
                     $this->_decodeUnixTime(substr($content, $content_pos), $tag);
             default:
@@ -786,7 +786,7 @@ class File_ASN1
                 return isset($this->oids[$decoded['content']]) ? $this->oids[$decoded['content']] : $decoded['content'];
             case FILE_ASN1_TYPE_UTC_TIME:
             case FILE_ASN1_TYPE_GENERALIZED_TIME:
-                if (class_exists('DateTime')) {
+                if (class_exists('DateTime', false)) {
                     if (isset($mapping['implicit'])) {
                         $decoded['content'] = $this->_decodeDateTime($decoded['content'], $decoded['type']);
                     }
@@ -1048,7 +1048,7 @@ class File_ASN1
             case FILE_ASN1_TYPE_GENERALIZED_TIME:
                 $format = $mapping['type'] == FILE_ASN1_TYPE_UTC_TIME ? 'y' : 'Y';
                 $format.= 'mdHis';
-                if (!class_exists('DateTime')) {
+                if (!class_exists('DateTime', false)) {
                     $value = @gmdate($format, strtotime($source)) . 'Z';
                 } else {
                     $date = new DateTime($source, new DateTimeZone('GMT'));

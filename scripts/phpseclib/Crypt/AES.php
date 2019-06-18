@@ -68,7 +68,7 @@
 /**
  * Include Crypt_Rijndael
  */
-if (!class_exists('Crypt_Rijndael')) {
+if (!class_exists('Crypt_Rijndael', false)) {
     include_once 'Rijndael.php';
 }
 
