@@ -45,7 +45,7 @@
 /**
  * Include File_ASN1
  */
-if (!class_exists('File_ASN1')) {
+if (!class_exists('File_ASN1', false)) {
     include_once 'ASN1.php';
 }
 
@@ -344,7 +344,7 @@ class File_X509
      */
     function __construct()
     {
-        if (!class_exists('Math_BigInteger')) {
+        if (!class_exists('Math_BigInteger', false)) {
             include_once 'Math/BigInteger.php';
         }
 
@@ -2135,7 +2135,7 @@ class File_X509
         }
 
         if (!isset($date)) {
-            $date = class_exists('DateTime') ?
+            $date = class_exists('DateTime', false) ?
                 new DateTime(null, new DateTimeZone(@date_default_timezone_get())) :
                 time();
         }
@@ -2147,7 +2147,7 @@ class File_X509
         $notAfter = isset($notAfter['generalTime']) ? $notAfter['generalTime'] : $notAfter['utcTime'];
 
         switch (true) {
-            case is_string($date) && class_exists('DateTime'):
+            case is_string($date) && class_exists('DateTime', false):
                 $date = new DateTime($date, new DateTimeZone(@date_default_timezone_get()));
             case is_object($date) && strtolower(get_class($date)) == 'datetime':
                 $notBefore = new DateTime($notBefore, new DateTimeZone(@date_default_timezone_get()));
@@ -2447,7 +2447,7 @@ class File_X509
     {
         switch ($publicKeyAlgorithm) {
             case 'rsaEncryption':
-                if (!class_exists('Crypt_RSA')) {
+                if (!class_exists('Crypt_RSA', false)) {
                     include_once 'Crypt/RSA.php';
                 }
                 $rsa = new Crypt_RSA();
@@ -2891,7 +2891,7 @@ class File_X509
                 return $result;
             case FILE_X509_DN_HASH:
                 $dn = $this->getDN(FILE_X509_DN_CANON, $dn);
-                if (!class_exists('Crypt_Hash')) {
+                if (!class_exists('Crypt_Hash', false)) {
                     include_once 'Crypt/Hash.php';
                 }
                 $hash = new Crypt_Hash('sha1');
@@ -3192,7 +3192,7 @@ class File_X509
 
         switch ($keyinfo['algorithm']['algorithm']) {
             case 'rsaEncryption':
-                if (!class_exists('Crypt_RSA')) {
+                if (!class_exists('Crypt_RSA', false)) {
                     include_once 'Crypt/RSA.php';
                 }
                 $publicKey = new Crypt_RSA();
@@ -3273,7 +3273,7 @@ class File_X509
 
         switch ($algorithm) {
             case 'rsaEncryption':
-                if (!class_exists('Crypt_RSA')) {
+                if (!class_exists('Crypt_RSA', false)) {
                     include_once 'Crypt/RSA.php';
                 }
                 $this->publicKey = new Crypt_RSA();
@@ -3403,7 +3403,7 @@ class File_X509
 
         switch ($algorithm) {
             case 'rsaEncryption':
-                if (!class_exists('Crypt_RSA')) {
+                if (!class_exists('Crypt_RSA', false)) {
                     include_once 'Crypt/RSA.php';
                 }
                 $this->publicKey = new Crypt_RSA();
@@ -3607,7 +3607,7 @@ class File_X509
         if (is_object($date) && strtolower(get_class($date)) == 'file_asn1_element') {
             return $date;
         }
-        if (!class_exists('DateTime')) {
+        if (!class_exists('DateTime', false)) {
             $year = @gmdate("Y", @strtotime($date)); // the same way ASN1.php parses this
         } else {
             $dateObj = new DateTime($date, new DateTimeZone('GMT'));
@@ -3677,7 +3677,7 @@ class File_X509
                 return false;
             }
 
-            if (!class_exists('DateTime')) {
+            if (!class_exists('DateTime', false)) {
                 $startDate = !empty($this->startDate) ? $this->startDate : @date('D, d M Y H:i:s O');
                 $endDate = !empty($this->endDate) ? $this->endDate : @date('D, d M Y H:i:s O', strtotime('+1 year'));
             } else {
@@ -3959,7 +3959,7 @@ class File_X509
 
         $currentCert = isset($this->currentCert) ? $this->currentCert : null;
         $signatureSubject = isset($this->signatureSubject) ? $this->signatureSubject : null;
-        if (!class_exists('DateTime')) {
+        if (!class_exists('DateTime', false)) {
             $thisUpdate = !empty($this->startDate) ? $this->startDate : @date('D, d M Y H:i:s O');
         } else {
             $thisUpdate = new DateTime('now', new DateTimeZone(@date_default_timezone_get()));
@@ -4116,7 +4116,7 @@ class File_X509
      */
     function setStartDate($date)
     {
-        if (class_exists('DateTime')) {
+        if (class_exists('DateTime', false)) {
             $date = new DateTime($date, new DateTimeZone(@date_default_timezone_get()));
             $this->startDate = $date->format('D, d M Y H:i:s O');
         } else {
@@ -4145,7 +4145,7 @@ class File_X509
             $temp = chr(FILE_ASN1_TYPE_GENERALIZED_TIME) . $asn1->_encodeLength(strlen($temp)) . $temp;
             $this->endDate = new File_ASN1_Element($temp);
         } else {
-            if (class_exists('DateTime')) {
+            if (class_exists('DateTime', false)) {
                 $date = new DateTime($date, new DateTimeZone(@date_default_timezone_get()));
                 $this->endDate = $date->format('D, d M Y H:i:s O');
             } else {
@@ -4743,7 +4743,7 @@ class File_X509
                 }
                 $raw = base64_decode($raw);
                 // If the key is private, compute identifier from its corresponding public key.
-                if (!class_exists('Crypt_RSA')) {
+                if (!class_exists('Crypt_RSA', false)) {
                     include_once 'Crypt/RSA.php';
                 }
                 $key = new Crypt_RSA();
@@ -4775,7 +4775,7 @@ class File_X509
         $key = $this->_extractBER($key);
 
         // Now we have the key string: compute its sha-1 sum.
-        if (!class_exists('Crypt_Hash')) {
+        if (!class_exists('Crypt_Hash', false)) {
             include_once 'Crypt/Hash.php';
         }
         $hash = new Crypt_Hash('sha1');
@@ -4894,7 +4894,7 @@ class File_X509
             return false;
         }
 
-        if (!class_exists('DateTime')) {
+        if (!class_exists('DateTime', false)) {
             $revocationDate = @date('D, d M Y H:i:s O');
         } else {
             $revocationDate = new DateTime('now', new DateTimeZone(@date_default_timezone_get()));
