@@ -75,5 +75,3 @@ class Access extends Record {
 		return $options;
 	}
 }
-
-class AccessNotFoundException extends Exception {}
