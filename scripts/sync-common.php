@@ -15,7 +15,7 @@ class SyncProcess {
 	* @param array $args arguments
 	* @param Request $request object that triggered this sync
 	*/
-	public function __construct($command, $args, $request = null) {
+	public function __construct($command, $args, $password = null, $request = null) {
 		global $config;
 		$timeout_util = $config['general']['timeout_util'];
 
@@ -38,6 +38,9 @@ class SyncProcess {
 		$this->handle = proc_open($commandline, $descriptorspec, $this->pipes);
 		stream_set_blocking($this->pipes[1], 0);
 		stream_set_blocking($this->pipes[2], 0);
+		if(!is_null($password)) {
+			fwrite($this->pipes[0], $password."\n");
+		}
 	}
 
 	/**

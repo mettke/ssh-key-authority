@@ -170,6 +170,36 @@ a {
 }
 a:focus, a:hover {
 	color: #611d42;
+}
+
+#changes {
+	top: 0;
+	float: right;
+	border: 1px solid;
+	padding: 10px;
+	margin-top: 19px !important;
+	box-shadow: 2px 2px 2px #ddd;
+	border-color: #ddd;
+}
+#changes > a {
+	color: #000;
+	text-decoration: none;
+}
+#changes > button {
+	padding: 0;
+	border: none;
+	background: none;
+}
+#changes-icon-warn {
+	color: gold;
+}
+#changes-icon-succ {
+	color: gold;
+}
+.help {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
 
 @media (min-width: 768px) and (max-width: 991px) {
 	#wrap > .container {

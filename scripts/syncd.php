@@ -29,8 +29,8 @@ cli_set_process_title('keys-sync');
 umask(027);
 
 if(!isset($options['systemd'])) {
-	$pidfile = '/var/run/keys-sync.pid';
-	$lockfile = '/var/run/keys-sync.lock';
+	$pidfile = '/var/run/keys/keys-sync.pid';
+	$lockfile = '/var/run/keys/keys-sync.lock';
 	$logfile = '/var/log/keys/sync.log';
 
 	if(!isset($options['user'])) {
@@ -104,22 +104,65 @@ dlog("Daemon started");
 $sync_procs = array();
 define('MAX_PROCS', 20);
 
+$pipefile = '/var/run/keys/keys-sync.pipe';
+$timerfile = '/var/run/keys/keys-sync.timer';
+$key_password_enabled = isset($config["web"]["key_password_enabled"]) && $config["web"]["key_password_enabled"] == 1;
+$password = null;
+if($key_password_enabled) {
+	if (!file_exists($pipefile)) { 
+		if(!posix_mkfifo($pipefile, 0600)) {
+			die("Could not create named pipe.");
+		}
+	} 
+	$pipe = fopen($pipefile, "r+");
+	if(!$pipe) {
+		die("Could not open named pipe.");
+	}
+	if(!stream_set_blocking($pipe, 0)) {
+		die("Could not unblock named pipe.");
+	}
+	chmod($pipefile, 0622);
+	$timer = fopen($timerfile, "w+");
+	if(!$timer) {
+		die("Could not open/create timer file.");
+	}
+	fprintf($timer, '%04d', 0);
+	fseek($timer, 0);
+	chmod($timerfile, 0644);
+}
+$timeout = 0;
+
 // Primary loop
 while(is_null($signal)) {
+	if($key_password_enabled && !feof($pipe)) {
+		$read = rtrim(fgets($pipe), "\n\r\0");
+		if (!empty($read)) {
+			$password = $read;
+			$timeout = 900; // 15 * 60
+			fprintf($timer, '%04d', $timeout);
+			fseek($timer, 0);
+		}
+	}
 	try {
 		$reqs = $sync_request_dir->list_pending_sync_requests();
-		foreach($reqs as $req) {
-			$args = array();
-			$args[] = '--id';
-			$args[] = $req->server_id;
-			if(!is_null($req->account_name)) {
-				$args[] = '--user';
-				$args[] = $req->account_name;
+		$tmp_password = $password;
+		if(!$key_password_enabled || !is_null($password)) {
+			foreach($reqs as $req) {
+				if(count($sync_procs) > MAX_PROCS) break;
+				$args = array();
+				$args[] = '--id';
+				$args[] = $req->server_id;
+				if(!is_null($req->account_name)) {
+					$args[] = '--user';
+					$args[] = $req->account_name;
+				}
+				if(!$key_password_enabled) {
+					$args[] = '--no-password';
+				}
+				$req->set_in_progress();
+				dlog("Sync process spawning for: {$req->server_id}/{$req->account_name}");
+				$sync_procs[] = new SyncProcess(__DIR__.'/sync.php', $args, $password, $req);
 			}
-			if(count($sync_procs) > MAX_PROCS) break;
-			$req->set_in_progress();
-			dlog("Sync process spawning for: {$req->server_id}/{$req->account_name}");
-			$sync_procs[] = new SyncProcess(__DIR__.'/sync.php', $args, $req);
 		}
 	} catch(mysqli_sql_exception $e) {
 		if($e->getMessage() == 'MySQL server has gone away') {
@@ -146,6 +189,16 @@ while(is_null($signal)) {
 		}
 	}
 	sleep(1);
+	if($timeout > 0) {
+		$timeout -= 1;
+		if($timeout == 0) {
+			$password = null;
+		}
+		if($timeout % 10 == 0) {
+			fprintf($timer, '%04d', $timeout);
+			fseek($timer, 0);
+		}
+	}
 }
 dlog("Received exit signal");
 

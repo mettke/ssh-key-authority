@@ -60,16 +60,38 @@ foreach($routes as $path => $service) {
 }
 $router->handle_request($relative_request_url);
 if(isset($router->view)) {
-	$view = path_join($base_path, 'views', $router->view.'.php');
-	if(file_exists($view)) {
-		if($active_user->auth_realm == 'LDAP' || $active_user->auth_realm == 'local' || $router->public) {
-			require($view);
-		} else {
-			require('views/error403.php');
-			die;
-		}
+	if(isset($_POST['password_entry']) && !isset($_POST['password'])) {
+		$page = new PageSection('base');
+		$page->set('title', 'Unlock Key');
+		$page->set('content', new PageSection('password_entry'));
+		$page->set('alerts', $active_user->pop_alerts());
+		echo $page->generate();
 	} else {
-		throw new Exception("View file $view missing.");
+		if(isset($_POST['password_entry']) && isset($_POST['password'])) {
+			try {
+				if(file_exists("/var/run/keys/keys-sync.pipe")) {
+					$file = fopen("/var/run/keys/keys-sync.pipe", "a");
+					if($file) {
+						error_log($_POST['password']."\n");
+						$timer = fwrite($file, $_POST['password']."\n");
+						fclose($file);
+					}
+				}
+			} catch(ErrorException $e) {
+				error_log($e);
+			}
+		}
+		$view = path_join($base_path, 'views', $router->view.'.php');
+		if(file_exists($view)) {
+			if($active_user->auth_realm == 'LDAP' || $active_user->auth_realm == 'local' || $router->public) {
+				require($view);
+			} else {
+				require('views/error403.php');
+				die;
+			}
+		} else {
+			throw new Exception("View file $view missing.");
+		}
 	}
 }
 

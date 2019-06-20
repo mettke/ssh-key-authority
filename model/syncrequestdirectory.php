@@ -47,6 +47,21 @@ class SyncRequestDirectory extends DBDirectory {
 		}
 		return $reqs;
 	}
+
+	/**
+	* List the sync requests stored in the database that are not being processed yet.
+	* @return array of SyncRequest objects
+	*/
+	public function count_pending_sync_requests() {
+		$this->sync_list_stmt = $this->database->prepare("SELECT COUNT(*) as total FROM sync_request WHERE processing = 0 ORDER BY id");
+		$this->sync_list_stmt->execute();
+		$result = $this->sync_list_stmt->get_result();
+		$reqs = 0;
+		while($row = $result->fetch_assoc()) {
+			$reqs = $row['total'];
+		}
+		return $reqs;
+	}
 }
 
 class SyncRequestNotFoundException extends Exception {}

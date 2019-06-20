@@ -3,8 +3,8 @@ $admin_mail = $this->get('admin_mail');
 $baseurl = $this->get('baseurl');
 $security_config = $this->get('security_config');
 ?>
+<h1>Help</h1>
 <div class="panel-group" id="help">
-	<h1>Help</h1>
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h2 class="panel-title">

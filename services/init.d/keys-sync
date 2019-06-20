@@ -13,7 +13,7 @@
 
 SCRIPT=/srv/keys/scripts/syncd.php
 USER=keys-sync
-PIDFILE=/var/run/keys-sync.pid
+PIDFILE=/var/run/keys/keys-sync.pid
 
 test -f $SCRIPT || exit 0
 
