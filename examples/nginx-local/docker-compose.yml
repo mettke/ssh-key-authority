@@ -50,6 +50,7 @@ services:
       - ../shared/config-local/:/ska/config/:rw
       - ../shared/ssmtp.conf:/etc/ssmtp/ssmtp.conf:ro
       - ./public_html:/public_html:rw
+      - ../../:/ska:rw
     networks:
       - net
 
