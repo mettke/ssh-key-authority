@@ -15,9 +15,9 @@ if [ `whoami` == 'keys-sync' ]; then
       echo "Permissions must be $(id -u keys-sync):$(id -g keys-sync) with at least 400"
       exit 1
   fi
-  if ! grep "^timeout_util = BusyBox$" /ska/config/config.ini > /dev/null; then
-      echo "timeout_util must be set to BusyBox."
-      echo "Change it to: timeout_util = BusyBox"
+  if ! grep "^timeout_util = GNU coreutils$" /ska/config/config.ini > /dev/null; then
+      echo "timeout_util must be set to GNU coreutils."
+      echo "Change it to: timeout_util = GNU coreutils"
       exit 1
   fi
 elif [ $(id -u) = 0 ]; then
