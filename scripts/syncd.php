@@ -121,14 +121,12 @@ if($key_password_enabled) {
 	if(!stream_set_blocking($pipe, 0)) {
 		die("Could not unblock named pipe.");
 	}
-	chmod($pipefile, 0622);
 	$timer = fopen($timerfile, "w+");
 	if(!$timer) {
 		die("Could not open/create timer file.");
 	}
 	fprintf($timer, '%04d', 0);
 	fseek($timer, 0);
-	chmod($timerfile, 0644);
 }
 $timeout = 0;
 

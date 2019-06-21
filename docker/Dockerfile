@@ -23,6 +23,7 @@ RUN mkdir -p /var/log/keys/ /var/run/keys /run/php/ /ska/ && \
             ssmtp \
             sudo && \
     sed -i -e '/listen =/ s/= .*/= 9000/' /etc/php7/php-fpm.d/www.conf && \
+    sed -i -e '/user =/ s/.*/user = keys-sync/' /etc/php7/php-fpm.d/www.conf && \
     sed -i -e '/;pid =/ s/.*/pid = \/var\/run\/php-fpm.pid/' /etc/php7/php-fpm.conf && \
     chmod +x /entrypoint.sh /healthcheck.sh && \
     chown keys-sync:nogroup /var/run/keys && \
