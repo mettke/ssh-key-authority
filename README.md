@@ -19,6 +19,7 @@ Features
 * All access changes are logged to the database and to the system logs. Granting of access is also reported by email.
 * Be notified when a server becomes orphaned (has no active administrators).
 * Introduce key depreciation to encouraging users to replace their public keys
+* Support for encrypted SSH Keys (does not work with the openssh format. Instead use a different one like `ssh-keygen -m PEM`)
 
 Demo
 ----

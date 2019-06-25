@@ -212,6 +212,20 @@ function simplify_search($defaults, $values) {
 	}
 }
 
+function unsaved_changes_exist() {
+	global $sync_request_dir;
+	return $sync_request_dir->count_pending_sync_requests() > 0;
+}
+
+function get_unlocked_timer() {
+	$file = fopen("/var/run/keys/keys-sync.timer", "r");
+	if(!$file) return 0;
+	$timer = fread($file, 4);
+	if(!$timer) return 0;
+	fclose($file);
+	return (int) $timer;
+}
+
 class OutputFormatter {
 	public function comment_format($text) {
 		return hesc($text);

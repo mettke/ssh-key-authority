@@ -14,7 +14,7 @@ foreach($required_files as $file) {
 }
 
 // Parse the command-line arguments
-$options = getopt('h:i:au:p', array('help', 'host:', 'id:', 'all', 'user:', 'preview'));
+$options = getopt('h:i:au:pn', array('help', 'host:', 'id:', 'all', 'user:', 'preview', 'no-password'));
 if(isset($options['help'])) {
 	show_help();
 	exit(0);
@@ -24,7 +24,8 @@ $short_to_long = array(
 	'i' => 'id',
 	'a' => 'all',
 	'u' => 'user',
-	'p' => 'preview'
+	'p' => 'preview',
+	'n' => 'no-password'
 );
 foreach($short_to_long as $short => $long) {
 	if(isset($options[$short]) && isset($options[$long])) {
@@ -49,6 +50,7 @@ if(isset($options['user'])) {
 	$username = null;
 }
 $preview = isset($options['preview']);
+$no_password = isset($options['no-password']);
 
 // Use 'keys-sync' user as the active user (create if it does not yet exist)
 try {
@@ -82,7 +84,7 @@ if(isset($options['all'])) {
 		}
 	}
 } elseif(isset($options['id'])) {
-	sync_server($options['id'], $username, $preview);
+	sync_server($options['id'], $username, $preview, $no_password);
 	exit(0);
 }
 
@@ -92,6 +94,38 @@ foreach($servers as $server) {
 		continue;
 	}
 	$pending_syncs[$server->hostname] = $server;
+}
+
+$password = "";
+if(!$no_password) {
+	$key = new Crypt_RSA();
+	try {
+		$key_content = file_get_contents('config/keys-sync');
+	} catch(ErrorException $e) {
+		echo date('c')." Unable to load keyfile\n";
+		exit(1);
+	}
+	
+	$success = false;
+	try {
+		$success = $key->loadKey($key_content);
+	} catch(ErrorException $e) {}
+	if(!$success) {
+		if(!$no_password) {
+			try {
+				echo "Enter Key Password: \n";
+				system('stty -echo 2> /dev/null');
+				$password = rtrim(fgets(STDIN), "\n\r\0");
+				system('stty echo 2> /dev/null');
+				$key->setPassword($password);
+				$success = $key->loadKey($key_content);
+			} catch(ErrorException $e) {}
+		}
+		if(!$success) {
+			echo date('c')." Invalid Key or Password\n";
+			exit(1);
+		}
+	}
 }
 
 $sync_procs = array();
@@ -110,7 +144,10 @@ while(count($sync_procs) > 0 || count($pending_syncs) > 0) {
 		if($preview) {
 			$args[] = '--preview';
 		}
-		$sync_procs[] = new SyncProcess(__FILE__, $args);
+		if($no_password) {
+			$args[] = '--no-password';
+		}
+		$sync_procs[] = new SyncProcess(__FILE__, $args, $password);
 		unset($pending_syncs[$hostname]);
 	}
 	foreach($sync_procs as $ref => $sync_proc) {
@@ -137,11 +174,12 @@ Mandatory arguments to long options are mandatory for short options too.
   -u, --user             sync only the specified user account
   -p, --preview          perform no changes, display content of all
                          keyfiles
+  -n, --no-password      fail instead of prompting for password
       --help             display this help and exit
 <?php
 }
 
-function sync_server($id, $only_username = null, $preview = false) {
+function sync_server($id, $only_username = null, $preview = false, $no_password = false) {
 	global $config;
 	global $server_dir;
 	global $user_dir;
@@ -235,6 +273,41 @@ function sync_server($id, $only_username = null, $preview = false) {
 		return;
 	}
 
+	$key = new Crypt_RSA();
+	try {
+		$key_content = file_get_contents('config/keys-sync');
+	} catch(ErrorException $e) {
+		echo date('c')." {$hostname}: Public key authentication failed. Unable to load keyfile\n";
+		$server->sync_report('sync failure', 'SSH authentication failed: Unable to load keyfile');
+		$server->delete_all_sync_requests();
+		report_all_accounts_failed($keyfiles);
+		return;
+	}
+
+	$success = false;
+	try {
+		$success = $key->loadKey($key_content);
+	} catch(ErrorException $e) {}
+	if(!$success) {
+		if(!$no_password) {
+			try {
+				echo "Enter Key Password: \n";
+				system('stty -echo 2> /dev/null');
+				$password = rtrim(fgets(STDIN), "\n\r\0");
+				system('stty echo 2> /dev/null');
+				$key->setPassword($password);
+				$success = $key->loadKey($key_content);
+			} catch(ErrorException $e) {}
+		}
+		if(!$success) {
+			echo date('c')." {$hostname}: Public key authentication failed. Invalid Key or Password\n";
+			$server->sync_report('sync failure', 'SSH authentication failed: Invalid Key or Password');
+			$server->delete_all_sync_requests();
+			report_all_accounts_failed($keyfiles);
+			return;
+		}
+	}
+
 	echo date('c')." {$hostname}: Attempting to connect.\n";
 	$legacy = false;
 	$attempts = array('keys-sync', 'root');
@@ -287,8 +360,6 @@ function sync_server($id, $only_username = null, $preview = false) {
 			}
 		}
 		try {
-			$key = new Crypt_RSA();
-			$key->loadKey(file_get_contents('config/keys-sync'));
 			if ($ssh->login($attempt, $key)) {
 				echo date('c')." {$hostname}: Logged in as $attempt.\n";
 				break;

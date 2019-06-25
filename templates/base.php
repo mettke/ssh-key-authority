@@ -45,12 +45,27 @@ header("Content-Security-Policy: default-src 'self'");
 	<?php out($alert->content, $alert->escaping)?>
 </div>
 <?php } ?>
+<?php if($web_config['key_password_enabled']==1 ) { ?>
+	<?php $timer = get_unlocked_timer(); $changes_exist = unsaved_changes_exist(); ?>
+	<?php if($timer > 0 || $changes_exist) { ?>
+	<form id="changes" method="post" action="<?php outurl($this->data->relative_request_url) ?>">
+		<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
+		<button type="submit" name="password_entry" value="1" class="btn btn-default btn-xs">
+			<?php if($timer > 0) { ?>
+			Key unlocked (<?php out($timer) ?>s) <span id="changes-icon-warn" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+			<?php } else if($changes_exist) { ?>
+			Unsaved Changes <span id="changes-icon-succ" class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+			<?php } ?>
+		</button>
+	</form>
+	<?php } ?>
+<?php } ?>
 <?php out($this->get('content'), ESC_NONE) ?>
 </div>
 </div>
 <div id="footer">
 	<div class="container">
-		<p class="text-muted credit"><?php out($web_config['footer'], ESC_NONE)?> (v2.0.6)</p>
+		<p class="text-muted credit"><?php out($web_config['footer'], ESC_NONE)?> (v2.1.0)</p>
 		<?php if($this->get('active_user') && $this->get('active_user')->developer) { ?>
 		<?php } ?>
 	</div>
