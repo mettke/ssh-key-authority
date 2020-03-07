@@ -1,0 +1,179 @@
+{{#> base }}
+{{#*inline "iactive"}}
+active
+{{/inline}}
+{{#*inline "content"}}
+<h1>Keys management</h1>
+<p>Welcome to the SSH Key Authority server.</p>
+{{#if sub.keys.count}}
+<h2>Your public keys</h2>
+<form method="post" action="<?php out($this->data->relative_request_url)?>">
+  {{!-- TODO: CSRF --}}
+  {{!-- <?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?> --}}
+  <table class="table table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th class="fingerprint">Fingerprint</th>
+        <th></th>
+        <th>Size</th>
+        <th>Comment</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each sub.keys.entries}}
+      <tr>
+        <td>{{this.type_}}</td>
+        <td>
+          {{!-- TODO: link to key --}}
+          {{!-- <?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#info')?> --}}
+          <a href="#">
+            <span class="fingerprint_md5">{{this.fingerprint_md5}}</span>
+            <span class="fingerprint_sha256">{{this.fingerprint_sha256}}</span>
+          </a>
+        </td>
+        <td>
+          {{!-- TODO: Signatures and Destinations --}}
+          {{!-- <?php if(count($key->list_signatures()) > 0) { ?><a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#sig')?>"><span class="glyphicon glyphicon-pencil" title="Signed key"></span></a><?php } ?>
+					<?php if(count($key->list_destination_rules()) > 0) { ?><a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id).'#dest')?>"><span class="glyphicon glyphicon-pushpin" title="Destination-restricted"></span></a><?php } ?> --}}
+        </td>
+        <td>{{this.keysize}}</td>
+        <td>{{this.comment}}</td>
+        <td>
+          {{!-- <a href="<?php outurl('/users/'.urlencode($this->get('uid')).'/pubkeys/'.urlencode($key->id))?>"
+            class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span> Manage public key</a> --}}
+          <button type="submit" name="delete_public_key" value="{{this.id}}" class="btn btn-default btn-xs"><span
+              class="glyphicon glyphicon-trash"></span> Delete public key</button>
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</form>
+<p><button id="add_key_button" class="btn btn-default">Add another public key</button></p>
+<form method="post" action="<?php outurl($this->data->relative_request_url)?>" class="hidden" id="add_key_form">
+  {{!-- TODO: CSRF --}}
+  {{!-- <?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?> --}}
+  <div class="form-group">
+    <label for="add_public_key">Public key</label>
+    <textarea class="form-control" rows="4" id="add_public_key" name="add_public_key" required></textarea>
+  </div>
+  <div class="form-group row">
+    <div class="col-md-8">
+      <button type="submit" class="btn btn-primary btn-lg btn-block">Add public key</button>
+    </div>
+    <div class="col-md-2">
+      <button type="button" class="btn btn-info btn-lg btn-block">Help</button>
+    </div>
+    <div class="col-md-2">
+      <button type="button" class="btn btn-default btn-lg btn-block">Cancel</button>
+    </div>
+  </div>
+  <div id="help" class="hidden">
+    {{#> keygen_help }}
+    {{/keygen_help}}
+  </div>
+</form>
+{{#if sub.servers.count}}
+<h2>Your servers</h2>
+<p>You are listed as an administrator for the following servers:</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Hostname</th>
+      <th>Config</th>
+      <th>Admins</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each sub.servers.entries}}
+    <tr>
+      <td rowspan="2">
+        <a href="/servers/{{this.hostname}}" class="server">{{this.hostname}}</a>
+        {{!-- <?php if($server->pending_requests > 0) { ?>
+				<a href="<?php outurl('/servers/'.urlencode($server->hostname).'#requests') ?>"><span class="badge" title="Pending requests"><?php out(number_format($server->pending_requests)) ?></span></a>
+				<?php } ?> --}}
+      </td>
+      <td>
+        {{transform_mgmnt this.key_management this.authorization}}
+      </td>
+      <td>
+        {{!-- <?php
+				$admins = explode(',', $server->admins);
+				$admin_list = '';
+				foreach($admins as $admin) {
+					$type = substr($admin, 0, 1);
+					$name = substr($admin, 2);
+					if($type == 'G') {
+						$admin_list .= '<span class="glyphicon glyphicon-list-alt"></span> ';
+					}
+					$admin_list .= hesc($name).', ';
+				}
+				$admin_list = substr($admin_list, 0, -2);
+				out($admin_list, ESC_NONE);
+				?> --}}
+      </td>
+      <td rowspan="2" class="{{transform_sync this.sync_status this.key_management}}">
+        {{this.sync_status}}
+        {{!-- <?php 
+			if($server->key_management == 'keys') {
+				out($sync_details);
+			} else {
+				out("Unmanaged");
+			}
+			?> --}}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2" class="indented">
+        <dl class="oneline">
+          {{!-- <?php foreach($server->list_accounts() as $server_account) { ?>
+          <dt><a
+              href="<?php outurl('/servers/'.urlencode($server->hostname).'/accounts/'.urlencode($server_account->name))?>"
+              class="serveraccount"><?php out($server_account->name) ?></a>:</dt>
+          <?php
+					$list = array();
+					foreach($server_account->list_access() as $access) {
+						$entity = $access->source_entity;
+						switch(get_class($entity)) {
+						case 'User':
+							$list[] = hesc($entity->uid);
+							break;
+						case 'ServerAccount':
+							$list[] = hesc($entity->name.'@'.$entity->server->hostname);
+							break;
+						case 'Group':
+							$list[] = '<span class="glyphicon glyphicon-list-alt"></span> '.hesc($entity->name);
+							break;
+						}
+					}
+					?>
+          <dd><?php out(implode(', ', $list), ESC_NONE)?></dd>
+          <?php } ?> --}}
+        </dl>
+      </td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+{{/if}}
+{{else}}
+<h2>Getting started</h2>
+<p>To start using the key management system, you must first generate a "key pair". The instructions for doing this vary
+  based on your computer's Operating System (OS).</p>
+{{#> keygen_help }}
+{{/keygen_help}}
+<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
+  {{!-- TODO: CSRF --}}
+  {{!-- <?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?> --}}
+  <div class="form-group">
+    <label for="public_key">Public key</label>
+    <textarea class="form-control" rows="4" id="add_public_key" name="add_public_key" required></textarea>
+  </div>
+  <div class="form-group"><button class="btn btn-primary btn-lg btn-block">Add public key</button></div>
+</form>
+{{/if}}
+{{/inline}}
+{{/base}}

@@ -1,0 +1,82 @@
+version: '2.2'
+services:
+  # Database for SSH Key Authority (only one required)
+  postgresql:
+    image: postgres:alpine
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: ska
+      POSTGRES_USER: ska
+      POSTGRES_PASSWORD: ska
+  mariadb:
+    image: mariadb
+    restart: always
+    ports:
+      - 3306:3306
+    volumes:
+      - "./data.sql:/docker-entrypoint-initdb.d/init.sql"
+    environment:
+      MYSQL_ROOT_PASSWORD: ska
+      MYSQL_DATABASE: ska
+      MYSQL_USER: ska
+      MYSQL_PASSWORD: ska
+  mysql:
+    image: mysql
+    restart: always
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ska
+      MYSQL_DATABASE: ska
+      MYSQL_USER: ska
+      MYSQL_PASSWORD: ska
+
+  # Keycloak oauth2 testing server
+  #
+  # Client ID: test_client
+  # Client Secret: cec217b2-977a-4a26-a75b-d458d4cc03b6
+  # Redirect Url: 
+  #  - http://localhost/auth/callback, 
+  #  - http://localhost:8080/auth/callback
+  #  - http://ska.local/auth/callback
+  #  - http://ska.local:8080/auth/callback
+  # Admin User:
+  #  - Scope: test-admin
+  #  - User: admin
+  #  - Password: admin
+  # User:
+  #  - Scope: test-user
+  #  - User: user
+  #  - Password: user
+  # User:
+  #  - Scope: -
+  #  - User: unauth
+  #  - Password: unauth
+
+  kc-pq:
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - "./kc-init.sql:/docker-entrypoint-initdb.d/init.sql"
+  keycloak:
+    restart: always
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: kc-pq
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: keycloak
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+    ports:
+      - 8000:8080
+    depends_on:
+      - kc-pq

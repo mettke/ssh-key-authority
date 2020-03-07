@@ -1,0 +1,98 @@
+{{#> base }}
+{{#*inline "pactive"}}
+active
+{{/inline}}
+{{#*inline "content"}}
+<h1>Public keys</h1>
+<div class="panel-group">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">Filter options</h3>
+		</div>
+		<div id="search_filter">
+			<div class="panel-body">
+				<form>
+					<div class="row">
+						<div class="col-md-6 form-group">
+							<label for="fingerprint-search">Fingerprint</label>
+							<input type="text" id="fingerprint-search" name="fingerprint" class="form-control"
+								value="{{param.fingerprint}}">
+						</div>
+						<div class="col-md-2 form-group">
+							<label for="type-search">Key type</label>
+							<input type="text" id="type-search" name="type" class="form-control" value="{{param.type}}">
+						</div>
+						<div class="col-md-2 form-group">
+							<label for="keysize-min">Min key size</label>
+							<div class="input-group">
+								<span class="input-group-addon">≥</span>
+								<input type="text" id="keysize-min" name="keysize-min" class="form-control"
+									value="{{param.keysize-min}}">
+							</div>
+						</div>
+						<div class="col-md-2 form-group">
+							<label for="keysize-max">Max key size</label>
+							<div class="input-group">
+								<span class="input-group-addon">≤</span>
+								<input type="text" id="keysize-max" name="keysize-max" class="form-control"
+									value="{{param.keysize-max}}">
+							</div>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-primary">Display results</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<p>{{sub.count}} public key found
+</p>
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th class="fingerprint">Fingerprint</th>
+			<th>Type</th>
+			<th>Size</th>
+			<th>Comment</th>
+			<th>Owner</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{#each sub.entries}}
+		<tr>
+			<td>
+				<a href="/app/publickeys/{{this.id}}">
+					<span class="fingerprint_md5">{{this.fingerprint_md5}}</span>
+					<span class="fingerprint_sha256">{{this.fingerprint_sha256}}</span>
+				</a>
+			</td>
+			<td class="nowrap">{{this.type_}}</td>
+			{{!-- <?php if($pubkey->keysize < 4095) out(' class="danger"', ESC_NONE)?>> --}}
+			<td>{{this.keysize}}</td>
+			<td>{{this.comment}}</td>
+			<td>
+				{{!-- <?php
+				switch(get_class($pubkey->owner)) {
+				case 'User':
+				?>
+				<a href="<?php outurl('/users/'.urlencode($pubkey->owner->uid))?>"
+					class="user"><?php out($pubkey->owner->uid)?></a>
+				<?php if(!$pubkey->owner->active) out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?>
+				<?php
+					break;
+				case 'ServerAccount':
+				?>
+				<a href="<?php outurl('/servers/'.urlencode($pubkey->owner->server->hostname))?>/accounts/<?php out($pubkey->owner->name, ESC_URL)?>"
+					class="serveraccount"><?php out($pubkey->owner->name.'@'.$pubkey->owner->server->hostname)?></a>
+				<?php if($pubkey->owner->server->key_management == 'decommissioned') out(' <span class="label label-default">Inactive</span>', ESC_NONE) ?>
+				<?php
+					break;
+				}
+				?> --}}
+			</td>
+		</tr>
+		{{/each}}
+	</tbody>
+</table>
+{{/inline}}
+{{/base}}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>{{title}}</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/png" href="/static/key_16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="/static/key_32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/static/key_96.png" sizes="96x96">
+
+    <link rel="stylesheet" href="/static/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/style.css?{{style_mtime}}">
+
+    <script src="/static/header.js?{{jsh_mtime}}"></script>
+    <script defer src="/static/jquery.min.js"></script>
+    <script defer src="/static/bootstrap/bootstrap.min.js"></script>
+    <script defer src="/static/extra.js?{{js_mtime}}"></script>
+</head>
+
+<body>
+    <div class="wrapper">
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/app"><img src="/static/logo-header-itmettke.png">{{title}}</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li class="{{> iactive}}"><a href="/app">Home <span class="sr-only">(current)</span></a></li>
+                        <li class="{{> sactive}}"><a href="/app/servers">Servers</a></li>
+                        <li class="{{> uactive}}"><a href="/app/users">Users</a></li>
+                        <li class="{{> hactive}}"><a href="/app/groups">Groups</a></li>
+                        <li class="{{> pactive}}"><a href="/app/publickeys">Public keys</a></li>
+                        <li class="{{> aactive}}"><a href="/app/activity">Activity</a></li>
+                        <li class="{{> hactive}}"><a href="/app/help">Help</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="container" id="content">
+            {{> content}}
+        </div>
+        <footer>
+            <div class="container">
+                <p class="text-muted credit">Developed by <a href="https://github.com/mettke/ssh-key-authority">Marc
+                        Mettke</a> (v{{version}})</p>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>

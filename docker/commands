@@ -1,0 +1,25 @@
+# postgres
+~/.cargo/bin/diesel migration run \
+    --migration-dir='./migrations.postgres' \
+    --database-url='postgres://ska:ska@localhost.localdomain:5432/ska'
+
+cargo run -- \
+    --db-type postgres --db-host localhost.localdomain --db-port 5432 \
+    --db-name ska --db-user ska --db-pass ska
+
+# mysql
+~/.cargo/bin/diesel migration run \
+    --migration-dir='./migrations.mysql' \
+    --database-url='mysql://ska:ska@localhost.localdomain:3306/ska'
+
+cargo run -- \
+    --db-type mysql --db-host localhost.localdomain --db-port 3306 \
+    --db-name ska --db-user ska --db-pass ska
+
+# sqlite
+~/.cargo/bin/diesel migration run \
+    --migration-dir='./migrations.sqlite' \
+    --database-url='docker/db.sqlite'
+
+cargo run -- \
+    --db-type sqlite --db-path "docker/db.sqlite"

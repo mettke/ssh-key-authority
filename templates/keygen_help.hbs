@@ -1,0 +1,82 @@
+<ul class="nav nav-tabs">
+    <li><a href="#windows_instructions" data-toggle="tab">Windows</a></li>
+    <li><a href="#mac_instructions" data-toggle="tab">Mac</a></li>
+    <li><a href="#linux_instructions" data-toggle="tab">Linux</a></li>
+</ul>
+<div class="tab-content clearfix">
+    <div class="tab-pane fade" id="windows_instructions">
+        <aside class="pull-right"><img src="/static/putty-key-generator.png" class="img-rounded"></aside>
+        <p>On Windows you will typically use the <a
+                href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html">PuTTYgen</a> application to
+            generate your key pair.</p>
+        <ol>
+            <li>Download and run the latest Windows installer from the <a
+                    href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html">PuTTY download page</a>.
+            <li>Start PuTTYgen.
+            <li>Select the type of key to generate. RSA, ECDSA or ED25519 are good choices.
+            <li>For RSA, enter "4096" as the number of bits in the generated key. For ECDSA, use either the nistp384 or
+                nistp521 curve.
+            <li>Click the Generate button.
+            <li>Provide a comment for the key: This comment allows to identify your key. Best thing is to use your
+                username or email address.
+            <li><strong>Provide a key passphrase.</strong>
+            <li>Save the private key to your local machine.
+            <li>Select and copy the contents of the "Public key for pasting into OpenSSH authorized_keys file" section
+                at the top of the window (scrollable, make sure to select all).
+        </ol>
+        <div class="alert alert-info">
+            <strong>Note:</strong> if you are not using PuTTY to connect, you may need to export your private key into
+            OpenSSH format to use it. You can do this from the Conversions menu.
+        </div>
+        <div class="alert alert-info">
+            <strong>Note:</strong> if you are using Cygwin or MSYS bash, the instructions for Linux can be used instead.
+        </div>
+    </div>
+    <div class="tab-pane fade" id="mac_instructions">
+        <p>On Mac you can generate a key pair with the ssh-keygen command.</p>
+        <ol>
+            <li>Start the "Terminal" program.
+            <li>Run one of the following commands. Make sure to replace '<var>comment</var>' with a text that identifies
+                you. Best thing is to use your username or email address.
+                <ul>
+                    <li>rsa: <code>ssh-keygen -t rsa -b 4096 -C '<var>comment</var>'</code>
+                    <li>ecdsa: <code>ssh-keygen -t ecdsa -b 256 -C '<var>comment</var>'</code>
+                    <li>ed25519: <code>ssh-keygen -t ed25519 -C '<var>comment</var>'</code>
+                </ul>
+            <li><strong>Make sure that you give the key a passphrase when prompted.</strong>
+            <li>A new text file will have been created in a <code>.ssh</code> directory. Copy the contents of one of the
+                following files into your clipboard (depends on the algorithm you used).
+                <ul>
+                    <li>rsa: <code>id_rsa.pub</code>
+                    <li>ecdsa: <code>id_ecdsa.pub</code>
+                    <li>ed25519: <code>id_ed25519.pub</code>
+                </ul>
+        </ol>
+    </div>
+    <div class="tab-pane fade" id="linux_instructions">
+        <p>On Linux you can generate a key pair with the ssh-keygen command.</p>
+        <ol>
+            <li>Open a terminal on your machine
+            <li>Run one of the following commands. Make sure to replace '<var>comment</var>' with a text that identifies
+                you. Best thing is to use your username or email address.
+                <ul>
+                    <li>rsa: <code>ssh-keygen -t rsa -b 4096 -C '<var>comment</var>'</code>
+                    <li>ecdsa: <code>ssh-keygen -t ecdsa -b 256 -C '<var>comment</var>'</code>
+                    <li>ed25519: <code>ssh-keygen -t ed25519 -C '<var>comment</var>'</code>
+                </ul>
+                <div class="alert alert-info">
+                    Note: if this command fails with a message of "ssh-keygen: command not found", you need to install
+                    the openssh-client package: <code>sudo apt-get install openssh-client</code> on Debian-based
+                    systems.
+                </div>
+            <li><strong>Make sure that you give the key a passphrase when prompted.</strong>
+            <li>A new text file will have been created in a <code>.ssh</code> directory. Copy the contents of one of the
+                following files into your clipboard (depends on the algorithm you used).
+                <ul>
+                    <li>rsa: <code>id_rsa.pub</code>
+                    <li>ecdsa: <code>id_ecdsa.pub</code>
+                    <li>ed25519: <code>id_ed25519.pub</code>
+                </ul>
+        </ol>
+    </div>
+</div>

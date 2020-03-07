@@ -1,43 +1,86 @@
 #!/usr/bin/env ash
-if [ `whoami` == 'keys-sync' ]; then
-  if [ ! -r /ska/config/config.ini ]; then
-      echo "config.ini not found or incorrect permissions."
-      echo "Permissions must be $(id -u keys-sync):$(id -g keys-sync) with at least 400"
-      exit 1
-  fi
-  if [ ! -r /ska/config/keys-sync ]; then
-      echo "private key not found or incorrect permissions."
-      echo "Permissions must be $(id -u keys-sync):$(id -g keys-sync) with 400"
-      exit 1
-  fi
-  if [ ! -r /ska/config/keys-sync.pub ]; then
-      echo "public key not found or incorrect permissions."
-      echo "Permissions must be $(id -u keys-sync):$(id -g keys-sync) with at least 400"
-      exit 1
-  fi
-  if ! grep "^timeout_util = GNU coreutils$" /ska/config/config.ini > /dev/null; then
-      echo "timeout_util must be set to GNU coreutils."
-      echo "Change it to: timeout_util = GNU coreutils"
-      exit 1
-  fi
-elif [ $(id -u) = 0 ]; then
-  if ! sudo -u keys-sync /entrypoint.sh; then
+if [ -z "${PORT}" ]; then
+    echo "Using 8080 as listening port"
+    PORT="8080"
+fi
+if [ -z "${API_ABUSEIPDB}" ]; then
+    echo "API Key for abuseipdb is required"
     exit 1
-  fi
-  rsync -a --delete /ska/public_html/ /public_html/
-  echo "Waiting for database..."
-  for i in $(seq 1 10); do 
-    if /ska/scripts/apply_migrations.php; then
-      echo "Success"
-      break
+fi
+if [ -z "${EXPIRATION_TIME}" ]; then
+    EXPIRATION_TIME="14"
+fi
+if [ -z "${STALE_TIME}" ]; then
+    STALE_TIME="28"
+fi
+case ${LOG_LEVEL} in
+    "0")
+    LOG_LEVEL="-vv"
+    ;;
+    "1")
+    LOG_LEVEL="-v"
+    ;;
+    "3")
+    LOG_LEVEL="-s"
+    ;;
+    "4")
+    LOG_LEVEL="-ss"
+    ;;
+    "5")
+    LOG_LEVEL="-sss"
+    ;;
+    *)
+    LOG_LEVEL=""
+    ;;
+esac
+if [ "${DB_TYPE}" == "mysql" ]; then
+    echo "Using mysql as database backend."
+    if [ -z "${DB_USER}" ] || [ -z "${DB_PASS}" ] || 
+        [ -z "${DB_HOST}" ] || [ -z "${DB_PORT}" ] || 
+        [ -z "${DB_NAME}" ]; then
+        echo "The following env variables are required to use mysql as backend:"
+        echo "DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME"
+        exit 1
     fi
-    echo "Trying again in 1 sec"
-    sleep 1
-  done
-  
-  /usr/sbin/crond
-  /ska/scripts/syncd.php --user keys-sync
-  /usr/sbin/php-fpm7 -F
+
+    diesel migration run \
+        --migration-dir='/usr/share/blacklistd/migrations.mysql' \
+        --database-url="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    blacklistd --api-abuseipdb "${API_ABUSEIPDB}" --port "${PORT}" ${LOG_LEVEL} \
+        --db-type mysql --db-host "${DB_HOST}" --db-port "${DB_PORT}" \
+        --db-name "${DB_NAME}" --db-user "${DB_USER}" --db-pass "${DB_PASS}" \
+        --expiration-days "${EXPIRATION_TIME}" --stale-days "${STALE_TIME}"
+elif [ "${DB_TYPE}" == "postgres" ]; then 
+    echo "Using postgres as database backend."
+    if [ -z "${DB_USER}" ] || [ -z "${DB_PASS}" ] || 
+        [ -z "${DB_HOST}" ] || [ -z "${DB_PORT}" ] || 
+        [ -z "${DB_NAME}" ]; then
+        echo "The following env variables are required to use postgres as backend:"
+        echo "DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME"
+        exit 1
+    fi
+
+    diesel migration run \
+        --migration-dir='/usr/share/blacklistd/migrations.postgres' \
+        --database-url="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    blacklistd --api-abuseipdb "${API_ABUSEIPDB}" --port "${PORT}" ${LOG_LEVEL} \
+        --db-type postgres --db-host "${DB_HOST}" --db-port "${DB_PORT}" \
+        --db-name "${DB_NAME}" --db-user "${DB_USER}" --db-pass "${DB_PASS}" \
+        --expiration-days "${EXPIRATION_TIME}" --stale-days "${STALE_TIME}"
 else
-  echo "Must be executed with root"
+    echo "Using sqlite as database backend."
+    echo "Consider using a different backend to improve performance"
+    if [ -z "${DB_PATH}" ]; then
+        echo "Using /data/db.sqlite as default path"
+        DB_PATH="/data/db.sqlite"
+    fi
+    DB_DIR=$(dirname "${DB_PATH}")
+    mkdir -p "${DB_DIR}"
+
+    diesel migration run \
+        --migration-dir='/usr/share/blacklistd/migrations.sqlite' \
+        --database-url="${DB_PATH}"
+    blacklistd --api-abuseipdb "${API_ABUSEIPDB}" --port "${PORT}" ${LOG_LEVEL} \
+        --db-type sqlite --db-path "${DB_PATH}" \
+        --expiration-days "${EXPIRATION_TIME}" --stale-days "${STALE_TIME}"
 fi

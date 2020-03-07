@@ -1,0 +1,22 @@
+-- Your SQL goes here
+DROP TABLE `user_alert`;
+DROP TABLE `user`;
+DROP TABLE `sync_request`;
+DROP TABLE `server_note`;
+DROP TABLE `server_ldap_access_option`;
+DROP TABLE `server_event`;
+DROP TABLE `server_admin`;
+DROP TABLE `server_account`;
+DROP TABLE `server`;
+DROP TABLE `public_key_signature`;
+DROP TABLE `public_key_dest_rule`;
+DROP TABLE `public_key`;
+DROP TABLE `group_member`;
+DROP TABLE `group_event`;
+DROP TABLE `group`;
+DROP TABLE `entity_event`;
+DROP TABLE `entity_admin`;
+DROP TABLE `access_request`;
+DROP TABLE `access_option`;
+DROP TABLE `access`;
+DROP TABLE `entity`;

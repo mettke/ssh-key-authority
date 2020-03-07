@@ -1,0 +1,184 @@
+html,
+body {
+    height: 100%;
+    width: 100vw;
+    /* The html and body elements cannot have any padding or margin. */
+}
+
+.navbar-brand img {
+    padding: 2px;
+    height: 100%;
+    float: left;
+    margin-right: 1em;
+    background: #fff;
+    border-radius: 25px;
+}
+
+nav .container-fluid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.wrapper {
+    min-height: 100%;
+    width: 100vw;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
+
+#add_key_button {
+    margin-top: 5px;
+}
+
+#changes {
+    top: 0;
+    float: right;
+    /* border: 1px solid; */
+    padding: 10px;
+    margin-top: 6px !important;
+    /* box-shadow: 2px 2px 2px #ddd; */
+    /* border-color: #ddd; */
+}
+
+#changes>a {
+    color: #000;
+    text-decoration: none;
+}
+
+#changes>button {
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+#changes-icon-warn {
+    color: gold;
+}
+
+#changes-icon-succ {
+    color: gold;
+}
+
+.nav-tabs {
+    margin-bottom: 20px;
+}
+
+footer {
+    margin-top: 20px;
+    height: 60px;
+    background-color: #ddd;
+}
+
+footer>.container {
+    padding: 20px 15px 0 15px;
+}
+
+a {
+    color: #9d9d9d;
+    text-decoration: none;
+}
+
+.alert-info {
+    color: #333;
+    background-color: #ddd;
+    border-color: #ddd;
+}
+
+code {
+    color: #333;
+}
+
+.btn-primary {
+    color: #fff !important;
+    background-color: #333 !important;
+    border-color: #ccc !important;
+}
+
+.btn-primary:hover {
+    color: #fff !important;
+    background-color: #222 !important;
+    border-color: #ccc !important;
+}
+
+.btn-primary:focus,
+.btn-primary.focus {
+    box-shadow: 0 0 0 0.2rem rgba(10, 10, 10, 0.5) !important;
+}
+
+.btn-primary.disabled,
+.btn-primary:disabled {
+    color: #fff !important;
+    background-color: #444 !important;
+    border-color: #ccc !important;
+}
+
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active,
+.show>.btn-primary.dropdown-toggle {
+    color: #fff !important;
+    background-color: #111 !important;
+    border-color: #ccc !important;
+}
+
+.btn-primary:not(:disabled):not(.disabled):active:focus,
+.btn-primary:not(:disabled):not(.disabled).active:focus,
+.show>.btn-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 0 0.2rem rgba(10, 10, 10, 0.5) !important;
+}
+
+.btn-info {
+    color: #777 !important;
+    background-color: #ccc !important;
+    border-color: #ccc !important;
+}
+
+.btn-info:hover {
+    color: #777 !important;
+    background-color: #bbb !important;
+    border-color: #ccc !important;
+}
+
+.btn-info:focus,
+.btn-info.focus {
+    box-shadow: 0 0 0 0.2rem rgba(50, 50, 50, 0.5) !important;
+}
+
+.btn-info.disabled,
+.btn-info:disabled {
+    color: #777 !important;
+    background-color: #ddd !important;
+    border-color: #ccc !important;
+}
+
+.btn-info:not(:disabled):not(.disabled):active,
+.btn-info:not(:disabled):not(.disabled).active,
+.show>.btn-info.dropdown-toggle {
+    color: #777 !important;
+    background-color: #aaa !important;
+    border-color: #ccc !important;
+}
+
+.btn-info:not(:disabled):not(.disabled):active:focus,
+.btn-info:not(:disabled):not(.disabled).active:focus,
+.show>.btn-info.dropdown-toggle:focus {
+    box-shadow: 0 0 0 0.2rem rgba(50, 50, 50, 0.5) !important;
+}
+
+#putty {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    nav .container-fluid {
+        display: block;
+        justify-content: unset;
+        flex-wrap: unset;
+    }
+    body .container {
+        width: inherit;
+    }
+}

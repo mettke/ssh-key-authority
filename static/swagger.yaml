@@ -1,0 +1,148 @@
+openapi: 3.0.0
+info:
+    title: "SSH Key Authority"
+    license:
+      name: "MIT"
+    version: "3.0.0-rc0"
+paths:
+    /auth/token:
+        summary: Request Token for API Authentication
+        get:
+            tags: 
+                - Authentication
+                - GET
+            summary: Send username and password in exchange for a bearer token
+            operationId: "getToken"
+            responses:
+                200:
+                    description: Token 
+                401:
+                    $ref: '#/components/responses/UnauthorizedError'
+                500:
+                    $ref: '#/components/responses/ServerError'
+            security:
+                - basicAuth: []
+    /api/publickeys:
+        summary: Operations on Public Keys
+        get:
+            tags: 
+                - Public Key
+                - GET
+            summary: Get all public keys visible for the current user
+            operationId: "getPublicKeys"
+            responses:
+                200:
+                    description: Public Keys successfully queried
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                        text/plain:
+                            schema:
+                                type: string
+                401:
+                    $ref: '#/components/responses/UnauthorizedError'
+                500:
+                    $ref: '#/components/responses/ServerError'
+            security:
+                - bearerAuth: []
+    /api/publickeys/{id}:
+        summary: Operations on a single Public Key
+        get:
+            tags: 
+                - Public Key
+                - GET
+            summary: Get a Public Key by its id
+            parameters:
+              - in: path
+                name: id
+                type: string
+                required: true
+                description: ID of the Public Key
+            operationId: "getPublicKey"
+            responses:
+                200:
+                    description: Public Key successfully queried
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                        text/plain:
+                            schema:
+                                type: string
+                401:
+                    $ref: '#/components/responses/UnauthorizedError'
+                500:
+                    $ref: '#/components/responses/ServerError'
+            security:
+                - bearerAuth: []
+    /api/servers:
+        summary: Operations on Servers
+        get:
+            tags: 
+                - Server
+                - GET
+            summary: Get all servers visible for the current user
+            operationId: "getServers"
+            responses:
+                200:
+                    description: Servers successfully queried
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                401:
+                    $ref: '#/components/responses/UnauthorizedError'
+                500:
+                    $ref: '#/components/responses/ServerError'
+            security:
+                - bearerAuth: []
+    /api/servers/{id}:
+        summary: Operations on a single Server
+        get:
+            tags: 
+                - Server
+                - GET
+            summary: Get a Server by its id
+            parameters:
+              - in: path
+                name: id
+                type: string
+                required: true
+                description: ID of the Server
+            operationId: "getServer"
+            responses:
+                200:
+                    description: Server successfully queried
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                401:
+                    $ref: '#/components/responses/UnauthorizedError'
+                500:
+                    $ref: '#/components/responses/ServerError'
+            security:
+                - bearerAuth: []
+tags:
+    - name: Authentication
+    - name: Public Key
+    - name: Server
+    - name: GET
+components:
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        basicAuth:
+            type: http
+            scheme: basic
+    responses:
+        UnauthorizedError:
+            description: Access token is missing or invalid
+        ServerError:
+            description: Server is not able to perform the request
+security:
+    - bearerAuth: [] 
+    - basicAuth: []
