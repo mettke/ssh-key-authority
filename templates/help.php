@@ -110,8 +110,10 @@ $security_config = $this->get('security_config');
 							<li>Disk full</li>
 						</ul>
 					</dd>
+					<?php if(!isset($security_config['disable_ip_collision_protection']) || $security_config['disable_ip_collision_protection'] == 0) { ?>
 					<dt>Multiple hosts with same IP address</dt>
 					<dd>At least one other host managed by SSH Key Authority resolves to the same IP address as your server.  SSH Key Authority will refuse to sync to either server until this is resolved.</dd>
+					<?php } ?>
 					<?php if(isset($security_config['hostname_verification']) && $security_config['hostname_verification'] >= 3) { ?>
 					<dt>Hostnames file missing</dt>
 					<dd>The <code>/var/local/keys-sync/.hostnames</code> file does not exist on the server. SSH Key Authority uses the contents of this file to verify that it is allowed to sync to your server.</dd>

@@ -263,14 +263,20 @@ function sync_server($id, $only_username = null, $preview = false, $no_password 
 		return;
 	}
 	// IP address check
-	echo date('c')." {$hostname}: Checking IP address {$server->ip_address}.\n";
-	$matching_servers = $server_dir->list_servers(array(), array('ip_address' => $server->ip_address, 'key_management' => array('keys')));
-	if(count($matching_servers) > 1) {
-		echo date('c')." {$hostname}: Multiple hosts with same IP address.\n";
-		$server->sync_report('sync failure', 'Multiple hosts with same IP address');
-		$server->delete_all_sync_requests();
-		report_all_accounts_failed($keyfiles);
-		return;
+	if(!isset($config['security']) || !isset($config['security']['disable_ip_collision_protection']) || $config['security']['disable_ip_collision_protection'] != 1) {
+		echo date('c')." {$hostname}: Checking IP address {$server->ip_address}.\n";
+		$query = array('ip_address' => $server->ip_address, 'key_management' => array('keys'));
+		if(isset($config['security']) && isset($config['security']['allow_different_ports_on_single_ip']) && $config['security']['allow_different_ports_on_single_ip'] == 1) {
+			$query['port'] = $server->port;
+		}
+		$matching_servers = $server_dir->list_servers(array(), $query);
+		if(count($matching_servers) > 1) {
+			echo date('c')." {$hostname}: Multiple hosts with same IP address.\n";
+			$server->sync_report('sync failure', 'Multiple hosts with same IP address');
+			$server->delete_all_sync_requests();
+			report_all_accounts_failed($keyfiles);
+			return;
+		}
 	}
 
 	$key = new Crypt_RSA();
