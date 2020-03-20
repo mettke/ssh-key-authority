@@ -2,7 +2,7 @@ FROM alpine
 LABEL maintainer="Marc Mettke <marc@itmettke.de>"
 
 ENV SYSTEM https://github.com/mettke/ssh-key-authority.git
-ENV TAG v2.1.0
+ENV TAG v2.1.1
 ADD entrypoint.sh /entrypoint.sh
 ADD healthcheck.sh /healthcheck.sh
 ADD cron /var/spool/cron/crontabs/root
