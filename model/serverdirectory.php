@@ -108,6 +108,7 @@ class ServerDirectory extends DBDirectory {
 				case 'hostname':
 					$where[] = "hostname REGEXP '".$this->database->escape_string($value)."'";
 					break;
+				case 'port':
 				case 'ip_address':
 				case 'rsa_key_fingerprint':
 					$where[] = "server.$field = '".$this->database->escape_string($value)."'";
