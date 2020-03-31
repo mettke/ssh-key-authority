@@ -321,8 +321,12 @@ $(function() {
 				$('a', status_div).addClass('hidden');
 			} else {
 				$('a', status_div).removeClass('hidden');
-				if(classname == 'warning') $('a', status_div).prop('href', '/help#sync_warning');
-				if(classname == 'danger') $('a', status_div).prop('href', '/help#sync_error');
+                		let path = $('a', status_div).prop('href');
+		                if (path.indexOf('#') > 0) {
+		                	path = path.substring(0, path.indexOf('#'));
+		                }
+                		if (classname == 'warning') $('a', status_div).prop('href', path + '#sync_warning');
+		                if (classname == 'danger') $('a', status_div).prop('href', path + '#sync_error');
 			}
 			$('div.spinner', status_div).remove();
 			$('button[name=sync]', status_div).removeClass('invisible');
