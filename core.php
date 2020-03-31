@@ -154,10 +154,9 @@ function english_list($array) {
  * @param string $type HTTP response code/name to use
  */
 function redirect($url = null, $type = '303 See other') {
-	global $absolute_request_url, $relative_frontend_base_url;
+	global $relative_frontend_base_url;
 	if(is_null($url)) {
-		// Redirect is to current URL
-		$url = $absolute_request_url;
+		$url = $relative_frontend_base_url;
 	} elseif(substr($url, 0, 1) !== '#') {
 		$url = $relative_frontend_base_url.$url;
 	}
