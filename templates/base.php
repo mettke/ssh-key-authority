@@ -23,7 +23,7 @@ header("Content-Security-Policy: default-src 'self'");
 				<span class="icon-bar"></span>
 			</button>
 			<?php if(!empty($web_config['logo'])) { ?>
-			<a class="navbar-brand" href="/">
+			<a class="navbar-brand" href="<?php outurl('/')?>">
 				<img src="<?php out($web_config['logo'])?>">
 				SSH Key Authority
 			</a>

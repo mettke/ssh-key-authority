@@ -454,7 +454,7 @@ default: $sync_class = 'warning'; $sync_message = 'Not synced'; break;
 						break;
 					case 'Group':
 						?>
-					<td><a href="/groups/<?php out($entity->name, ESC_URL)?>" class="group"><?php out($entity->name) ?></a></td>
+					<td><a href="<?php outurl('/groups/'.urlencode($entity->name))?>" class="group"><?php out($entity->name) ?></a></td>
 					<td><em>Group access</em></td>
 						<?php
 						break;
