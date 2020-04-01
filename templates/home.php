@@ -14,7 +14,7 @@
 </form>
 <?php } else { ?>
 <h2>Your public keys</h2>
-<form method="post" action="<?php out($this->data->relative_request_url)?>">
+<form method="post" action="<?php outurl($this->data->relative_request_url)?>">
 	<?php out($this->get('active_user')->get_csrf_field(), ESC_NONE) ?>
 	<table class="table">
 		<thead>
