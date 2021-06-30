@@ -323,9 +323,10 @@
 					</div>
 					<input type="text" id="from_value" name="access_option[from][value]" value="<?php if(isset($options['from'])) out($options['from']->value); ?>" class="form-control">
 					<div class="checkbox">
-						<label><input type="checkbox" name="access_option[environment][enabled]"<?php if(isset($options['environment'])) out(' checked'); ?>> Define environment variables (<code>environment=&quot;KEY1=VAL KEY2=VAL&quot;</code>)</label>
+						<label><input type="checkbox" name="access_option[environment][enabled]"<?php if(isset($options['environment'])) out(' checked'); ?>> Define environment variables (<code>environment=&quot;KEY1=VAL&quot;</code>)</label>
 					</div>
 					<input type="text" id="environment_value" name="access_option[environment][value]" value="<?php if(isset($options['environment'])) out($options['environment']->value); ?>" class="form-control">
+                    <i>To define multiple environment variables, separate them by comma.</i> (<code>KEY1=VAL1,KEY2=VAL2</code>)
 					<div class="checkbox">
 						<label><input type="checkbox" name="access_option[no-agent-forwarding][enabled]"<?php if(isset($options['no-agent-forwarding'])) out(' checked'); ?>> Disallow agent forwarding (<code>no-agent-forwarding</code>)</label>
 					</div>

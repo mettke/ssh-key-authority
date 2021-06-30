@@ -620,7 +620,13 @@ function get_keys($access_rules, $account_name, $hostname) {
 		$entity = $access->source_entity;
 		$optiontext = array();
 		foreach($access->list_options() as $option) {
-			$optiontext[] = $option->option.(is_null($option->value) ? '' : '="'.str_replace('"', '\\"', $option->value).'"');
+            if ($option->option === 'environment') {
+                foreach (explode(',', $option->value) as $env_variable) {
+                    $optiontext[] = $option->option . (is_null($option->value) ? '' : '="' . str_replace('"', '\\"', ltrim($env_variable)) . '"');
+                }
+            } else {
+                $optiontext[] = $option->option . (is_null($option->value) ? '' : '="' . str_replace('"', '\\"', $option->value) . '"');
+            }
 		}
 		$prefix = implode(',', $optiontext);
 		if($prefix !== '') $prefix .= ' ';
